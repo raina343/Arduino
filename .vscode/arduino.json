@@ -1,0 +1,4 @@
+{
+    "sketch": "Clock-with_RTC_andNTP-WithPixels-workingonenumber/Clock-with_RTC_andNTP-WithPixels-workingonenumber.ino",
+    "board": "arduino:samd:nano_33_iot"
+}

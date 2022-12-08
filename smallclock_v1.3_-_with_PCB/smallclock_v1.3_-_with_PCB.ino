@@ -526,6 +526,8 @@ void outputDigitsTemp(int Temperature, String units) {
   }
   pixels[28] = 28;  // dots
   pixels[29] = 29;  // dots
+
+  
   if (ShowThirdDigit) {
     for (int j = 14; j < 28; j++) {  // second digit... a 3
       if (nums[digit3][j - 14] == -1) {
