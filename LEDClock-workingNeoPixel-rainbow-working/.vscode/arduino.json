@@ -1,0 +1,4 @@
+{
+    "board": "arduino:samd:mkr1000",
+    "sketch": "LEDClock-workingNeoPixel-rainbow-working.ino"
+}
