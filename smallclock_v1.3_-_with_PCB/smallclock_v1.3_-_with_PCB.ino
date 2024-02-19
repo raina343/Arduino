@@ -129,14 +129,7 @@ void setup() {
     // we have saved credentials, so we start up normally. middle row green
 
     debugoutput(0, 1, 0, 0, 0, 150, 0, 1); //middle row green
-    //    strip.setPixelColor(11, strip.Color(0, 150, 0));
-    //    strip.setPixelColor(10, strip.Color(0, 150, 0));
-    //    strip.setPixelColor(24, strip.Color(0, 150, 0));
-    //    strip.setPixelColor(25, strip.Color(0, 150, 0));
-    //    strip.setPixelColor(40, strip.Color(0, 150, 0));
-    //    strip.setPixelColor(41, strip.Color(0, 150, 0));
-    //    strip.setPixelColor(54, strip.Color(0, 150, 0));
-    //    strip.setPixelColor(55, strip.Color(0, 150, 0));
+
     //    strip.show();
     Serial.print("Stored SSID:");
     Serial.println((String)owner.wifissid);
@@ -422,11 +415,7 @@ void SetTime() {
     // it's midnight, so re-run the time sync
     checktime = 1;
   }
-  // if ((PSTHour1 == "1") && (PSTHour2 == "2") && (PSTMinute1 == "0") && (PSTMinute2 == "0")) {
-  //     // it's Noon, so re-run the time sync
 
-  //     GetTime();
-  // }
   outputDigits(PSTMinute2.toInt(), PSTMinute1.toInt(), PSTHour2.toInt(), PSTHour1.toInt());
 }
 int numdigits(int i) {
@@ -626,8 +615,7 @@ void clearsavedsettings() {
 
 void loop() {
   if (digitalRead(clearsettings) == LOW) {
-    //    Serial.println("buttonpressed");
-    //    clearsavedsettings();//
+
     owner.valid = false;
     my_flash_store.write(owner);
     delay(2000);
@@ -692,7 +680,7 @@ void loop() {
         strip.show();
       }
       if (lightvalue < 100) {
-        strip.setBrightness(10);
+        strip.setBrightness(5);
         strip.show();
       }
     }
@@ -1632,8 +1620,9 @@ void GetTime() {
     Serial.print("Error code: ");
     Serial.println(err);
     debugoutput(1, 1, 1, 0, 150, 150, 150, 1); //all rows white
-
-
+ checktime = 0;
+//so this fails if the DNS lookup doesn't work.  this is, I suspect when the Wifi blows up or is restarted.  I'll test this over the next few days before noon.
+//if this is the case, then perhaps we should trigger a new wifi get here.
     delay(10000);
   }
 }
