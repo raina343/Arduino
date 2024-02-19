@@ -150,7 +150,7 @@ public:
   DateTime(const __FlashStringHelper *date, const __FlashStringHelper *time);
   DateTime(const char *iso8601date);
   bool isValid() const;
-  char *toString(char *buffer);
+  char *toString(char *buffer) const;
 
   /*!
       @brief  Return the year.
@@ -207,11 +207,11 @@ public:
     TIMESTAMP_TIME, //!< `hh:mm:ss`
     TIMESTAMP_DATE  //!< `YYYY-MM-DD`
   };
-  String timestamp(timestampOpt opt = TIMESTAMP_FULL);
+  String timestamp(timestampOpt opt = TIMESTAMP_FULL) const;
 
-  DateTime operator+(const TimeSpan &span);
-  DateTime operator-(const TimeSpan &span);
-  TimeSpan operator-(const DateTime &right);
+  DateTime operator+(const TimeSpan &span) const;
+  DateTime operator-(const TimeSpan &span) const;
+  TimeSpan operator-(const DateTime &right) const;
   bool operator<(const DateTime &right) const;
 
   /*!
@@ -311,8 +311,8 @@ public:
   */
   int32_t totalseconds() const { return _seconds; }
 
-  TimeSpan operator+(const TimeSpan &right);
-  TimeSpan operator-(const TimeSpan &right);
+  TimeSpan operator+(const TimeSpan &right) const;
+  TimeSpan operator-(const TimeSpan &right) const;
 
 protected:
   int32_t _seconds; ///< Actual TimeSpan value is stored as seconds
@@ -350,7 +350,7 @@ protected:
 /**************************************************************************/
 class RTC_DS1307 : RTC_I2C {
 public:
-  boolean begin(TwoWire *wireInstance = &Wire);
+  bool begin(TwoWire *wireInstance = &Wire);
   void adjust(const DateTime &dt);
   uint8_t isrunning(void);
   DateTime now();
@@ -359,7 +359,7 @@ public:
   uint8_t readnvram(uint8_t address);
   void readnvram(uint8_t *buf, uint8_t size, uint8_t address);
   void writenvram(uint8_t address, uint8_t data);
-  void writenvram(uint8_t address, uint8_t *buf, uint8_t size);
+  void writenvram(uint8_t address, const uint8_t *buf, uint8_t size);
 };
 
 /**************************************************************************/
@@ -369,7 +369,7 @@ public:
 /**************************************************************************/
 class RTC_DS3231 : RTC_I2C {
 public:
-  boolean begin(TwoWire *wireInstance = &Wire);
+  bool begin(TwoWire *wireInstance = &Wire);
   void adjust(const DateTime &dt);
   bool lostPower(void);
   DateTime now();
@@ -377,6 +377,10 @@ public:
   void writeSqwPinMode(Ds3231SqwPinMode mode);
   bool setAlarm1(const DateTime &dt, Ds3231Alarm1Mode alarm_mode);
   bool setAlarm2(const DateTime &dt, Ds3231Alarm2Mode alarm_mode);
+  DateTime getAlarm1();
+  DateTime getAlarm2();
+  Ds3231Alarm1Mode getAlarm1Mode();
+  Ds3231Alarm2Mode getAlarm2Mode();
   void disableAlarm(uint8_t alarm_num);
   void clearAlarm(uint8_t alarm_num);
   bool alarmFired(uint8_t alarm_num);
@@ -401,10 +405,10 @@ public:
 /**************************************************************************/
 class RTC_PCF8523 : RTC_I2C {
 public:
-  boolean begin(TwoWire *wireInstance = &Wire);
+  bool begin(TwoWire *wireInstance = &Wire);
   void adjust(const DateTime &dt);
-  boolean lostPower(void);
-  boolean initialized(void);
+  bool lostPower(void);
+  bool initialized(void);
   DateTime now();
   void start(void);
   void stop(void);
@@ -428,8 +432,8 @@ public:
 /**************************************************************************/
 class RTC_PCF8563 : RTC_I2C {
 public:
-  boolean begin(TwoWire *wireInstance = &Wire);
-  boolean lostPower(void);
+  bool begin(TwoWire *wireInstance = &Wire);
+  bool lostPower(void);
   void adjust(const DateTime &dt);
   DateTime now();
   void start(void);
