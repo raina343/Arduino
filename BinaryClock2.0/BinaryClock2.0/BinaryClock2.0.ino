@@ -6,11 +6,12 @@
 #include <Adafruit_NeoPixel.h>
 #include <FlashStorage.h>
 #include <Timezone.h>
-
+// #include "base64.hpp"
 #include "RTClib.h"
 RTC_DS3231 rtc;
 #define CLOCK_INTERRUPT_PIN 2  //Pete's Clock is wired up differently
 //#define CLOCK_INTERRUPT_PIN 5
+
 unsigned int localPort = 2390;  // local port to listen for UDP packets
 IPAddress timeServer(129, 6, 15, 28);
 const int NTP_PACKET_SIZE = 48;      // NTP timestamp is in the first 48 bytes of the message
@@ -38,6 +39,7 @@ typedef struct {
   char brightness[5];
   char wifi[3];
   char twelvehr[3];
+  // char AdminPassword[30];
   char timezone[10];
   char tempUnits[3];
   char dimmer[3];
@@ -836,14 +838,14 @@ void SendOKpage(WiFiClient &client) {
   client.println("</Li>");
   client.println("<Li>");
   client.println("<label for='ssid'>SSID</label>");
-  client.println("<input id='ssid' required type='text' name='ssid'");
+  client.println("<input id='ssid' maxlength=30 required type='text' name='ssid'");
   client.print("value='");
   client.print(owner.wifissid);
   client.print("' placeholder='ssid'>");
   client.println("</Li>");
   client.println("<li>");
   client.println("<label for='password'>Password</label>");
-  client.println("<input id='password'");
+  client.println("<input maxlength=30  id='password'");
   client.println("type='password'");
   client.println("name='password'");
   client.println("value='");
@@ -949,6 +951,26 @@ void SendOKpage(WiFiClient &client) {
   client.print("' id='rangevalue'>");
   client.println(" </div>");
   client.println("</li>");
+  // client.println("<li>");
+  // client.println("<label for='ChangeAdmin'>Change Admin Password</label>");
+  // client.println("<input maxlength=30  id='ChangeAdmin'");
+  // client.println("type='password'");
+  // client.println("name='ChangeAdmin'");
+  // client.println("value='");
+  // // client.print(owner.ChangeAdmin);
+  // client.print("' placeholder='password'><br>");
+  // client.println("</li>");
+  // client.println("<li>");
+  // client.println("<label for='ChangeAdminConfirm'>Conffirm Admin Password</label>");
+  // client.println("<input maxlength=30 id='ChangeAdminConfirm'");
+  // client.println("type='password'");
+  // client.println("name='ChangeAdminConfirm'");
+  // client.println("value='");
+  // // client.print(owner.ChangeAdmin);
+  // client.print("' placeholder='password'><br>");
+  // client.println("</li>");
+
+
   client.println("<li>");
   client.println("<button id='Submit' name='Submit' value='Submit' onclick='submit();' >Save</button>");
   client.println("</li>");
@@ -1056,6 +1078,17 @@ void SendOKpage(WiFiClient &client) {
   client.print("}");
   client.print("};");
   client.println("function submit() {");
+
+  // client.println("var passValue = document.getElementById('ChangeAdmin').value");
+  // client.println("var confpassValue = document.getElementById('ChangeAdminConfirm').value");
+  // client.println("if (passValue.length<6){");
+  //   client.println("window.alert('Admin Password must be 6 or more characters')");
+  //   client.println("return false;");
+  //   client.println("}else{");
+  // client.println("if(passValue != confpassValue) {");
+  //    client.println("window.alert('Passwords do not match!')");
+  //    client.println("return false;");
+  // client.println("}}");
   client.println("Loader.open();");
   client.println("var FormValid = true;");
   client.println("var data = [];");
@@ -1074,6 +1107,7 @@ void SendOKpage(WiFiClient &client) {
   client.println("data['password'] = 'Bi-naryClockSetup'");
   client.println("}");
   client.println("data['CurrentTime'] = Math.floor(Date.now() / 1000)");
+  //  client.println("delete data['ChangeAdminConfirm'];");
   client.println("encodeDataToURL = (data) => {");
   client.println("return Object");
   client.println(".keys(data)");
@@ -1109,6 +1143,7 @@ void SendOKpage(WiFiClient &client) {
   client.println("</HTML>");
   // break;
 }
+
 char linebuf[80];
 int charcount = 0;
 boolean authentificated = false;
@@ -1217,8 +1252,8 @@ void loop() {
 
             debugoutput(1, 0, 0, 0, 150, 0, 150, 1);  //top row Purple.  Checking and valdiating settings
 
-            char Buf[250];
-            readString.toCharArray(Buf, 200);
+            char Buf[350];
+            readString.toCharArray(Buf, 300);
             char *token = strtok(Buf, "/?");  // Get everything up to the /if(token) // If we got something
             unsigned long epoch;
             {
@@ -1250,6 +1285,24 @@ void loop() {
                     String pass = valu;
                     pass.toCharArray(owner.timezone, 10);
                   }
+                  if (String(name) == "ChangeAdmin") {
+                    // String AdminPassword = "admin:123456789012345678901234567890";
+                    String AdminPassword = valu;
+                    // if (valu == NULL) {
+
+                    // } else {
+                    //   //     unsigned char defaultpassword[40] = "admin:"+valu;
+                    // }
+                    AdminPassword.toCharArray(owner.AdminPassword, 30);
+                    //   unsigned char defaultpassword[40] = "admin:"+(String)AdminPassword;
+                    // // defaultpassword = AdminPassword;
+                    // unsigned char base64[21]; // 20 bytes for output + 1 for null terminator
+
+                    // // encode_base64() places a null terminator automatically, because the output is a string
+                    // unsigned int base64_length = encode_base64(defaultpassword, strlen((char *) defaultpassword), base64);
+                    // Serial.println(base64_length);
+                    // Serial.println((char *) base64);
+                  }
                   if (String(name) == "12hr") {
                     String twelvehr = valu;
                     twelvehr.toCharArray(owner.twelvehr, 3);
@@ -1262,10 +1315,7 @@ void loop() {
                     Serial.print("Wifi Time Setting2");
                     Serial.println(owner.wifi);
                   }
-                  // if (String(name) == "TempUnits") {
-                  //   String temp = valu;
-                  //   temp.toCharArray(owner.tempUnits, 3);
-                  // }
+
 
                   if (String(name) == "myRange") {
                     String brightness = valu;
