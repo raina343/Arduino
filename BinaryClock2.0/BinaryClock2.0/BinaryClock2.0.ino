@@ -425,130 +425,6 @@ int numdigits(int i) {
   return (strlen(str));
 }
 
-// void outputDigitsTemp(int Temperature, String units) {
-//   String temp1;
-//   String temp2;
-//   String temp3;
-//   int digit2;
-//   int digit3;
-//   int digit1;
-//   int Temp3;
-//   String TempUnits;
-//   bool ShowThirdDigit = false;
-//   if (units == "F") {
-//     Serial.println("CaveMan Temperature");
-//     Serial.println(numdigits(Temperature));
-//     Serial.println(Temperature);
-//     int Temperature2 = (Temperature * 1.8) + 32;
-//     temp1 = String(Temperature2).substring(0, 1);
-//     temp2 = String(Temperature2).substring(1, 2);
-//     if (numdigits(Temperature2) > 2) {
-//       ShowThirdDigit = true;
-//       temp3 = String(Temperature2).substring(2, 3);
-//       digit3 = temp3.toInt();
-//     } else {
-//     }
-//     digit1 = temp1.toInt();
-//     digit2 = temp2.toInt();
-//     TempUnits = "F";
-//   } else {
-//     if (units == "A") {
-//       Temperature = Temperature - 15;
-//     } else {
-//     }
-//     temp1 = String(Temperature).substring(0, 1);
-//     temp2 = String(Temperature).substring(1, 2);
-//     if (numdigits(Temperature) > 2) {
-//       ShowThirdDigit = true;
-//       temp3 = String(Temperature).substring(2, 3);
-//       digit3 = temp3.toInt();
-//     } else {
-//     }
-//     digit1 = temp1.toInt();
-//     digit2 = temp2.toInt();
-//     TempUnits = "C";
-//   }
-//   int nums[][15] = {
-
-//     { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 10, 11, -1, -1 },  // 0 //seems ok
-//     { 0, 1, -1, -1, -1, -1, 6, 7, 8, 9, 10, 11, 12, 13 },        // 1 //seems ok
-//     { -1, -1, 2, 3, -1, -1, -1, -1, 8, 9, -1, -1, -1, -1 },      // 2 //seems ok
-//     { -1, -1, -1, -1, -1, -1, -1, -1, 8, 9, -1, -1, 12, 13 },    // 3
-//     { 0, 1, -1, -1, -1, -1, 6, 7, -1, -1, -1, -1, 12, 13 },      // 4
-//     { -1, -1, -1, -1, 4, 5, -1, -1, -1, -1, -1, -1, 12, 13 },    // 5////numbers represent the pixels that are NOT LIT
-//     { -1, -1, -1, -1, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1 },    // 6
-//     { 0, 1, -1, -1, -1, -1, -1, -1, 8, 9, 10, 11, 12, 13 },      // 7 //seems ok
-//     { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },  // 8 //seems ok
-//     { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 12, 13 },  // 9 //seems ok
-//     { -1, -1, 2, 3, 4, 5, -1, -1, -1, -1, 10, 11, -1, -1 },      // C (for Temp)
-//     { 0, 1, 2, 3, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1 },        // F (for Temp)
-//     { 0, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },    // A (for Temp)
-//     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, 12, 13 },            // // - (for Temp)
-//     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 },            // all off
-//   };
-
-//   if ((String)temp1 == "-") {
-//     for (int j = 44; j < 58; j++) {  // fourth digit... a 1
-//       if (nums[12][j - 44] == -1) {
-//         pixels[j] = -1;
-//       } else {
-//         pixels[j] = nums[12][j - 44] + 44;
-//       }
-//     }
-//   } else {
-//     for (int j = 44; j < 58; j++) {  // fourth digit... a 1
-//       if (nums[digit1][j - 44] == -1) {
-//         pixels[j] = -1;
-//       } else {
-//         pixels[j] = nums[digit1][j - 44] + 44;
-//       }
-//     }
-//   }
-
-//   for (int j = 30; j < 44; j++) {  // third digit.. a 7
-//     if (nums[digit2][j - 30] == -1) {
-//       pixels[j] = -1;
-//     } else {
-//       pixels[j] = nums[digit2][j - 30] + 30;
-//     }
-//   }
-//   pixels[28] = 28;  // dots
-//   pixels[29] = 29;  // dots
-
-
-//   if (ShowThirdDigit) {
-//     for (int j = 14; j < 28; j++) {  // second digit... a 3
-//       if (nums[digit3][j - 14] == -1) {
-//         pixels[j] = -1;
-//       } else {
-//         pixels[j] = nums[digit3][j - 14] + 14;
-//       }
-//     }
-//   } else {
-//     for (int j = 14; j < 28; j++) {  // second digit... a 3
-//       if (nums[14][j - 14] == -1) {
-//         pixels[j] = -1;
-//       } else {
-//         pixels[j] = nums[14][j - 14] + 14;
-//       }
-//     }
-//   }
-//   if (units == "F") {
-//     for (int j = 0; j < 14; j++) {  // first digit.  a 3
-//       pixels[j] = nums[11][j];
-//     }
-//   } else {
-//     if (units == "A") {
-//       for (int j = 0; j < 14; j++) {  // first digit.  a 3
-//         pixels[j] = nums[12][j];
-//       }
-//     } else {
-//       for (int j = 0; j < 14; j++) {  // first digit.  a 3
-//         pixels[j] = nums[10][j];
-//       }
-//     }
-//   }
-// }
 void outputDigits(int hr, int min, int sec) {
 
   // Serial.println("here");
@@ -1066,7 +942,7 @@ void loop() {
           client.println(".slider:disabled::-webkit-slider-thumb{background: grey;cursor: not-allowed !important;}");
           client.println(".slider:disabled::-moz-range-thumb{background: grey;cursor: not-allowed !important;}");
           client.println(".slider:disabled{cursor: not-allowed !important;}");
-
+          client.println(".formcontent input.disabled {background: #c0c0c0;}");
           client.println("</style>");
 
           client.println("<header class='container-col'>");
@@ -1102,9 +978,9 @@ void loop() {
           client.println("<li>");
           client.println("<label for='password'>Password</label>");
           client.println("<input id='password'");
-          client.println("       type='password'");
-          client.println("       name='password'");
-          client.println("      value='");
+          client.println("type='password'");
+          client.println("name='password'");
+          client.println("value='");
           client.print(owner.Password);
           client.print("' placeholder='password' required><br>");
 
@@ -1253,11 +1129,18 @@ void loop() {
           client.println("} else {");
           client.println("document.getElementById('ssid').setAttribute('disabled', 'disabled');");
           client.println("document.getElementById('password').setAttribute('disabled', 'disabled');");
+
+          client.println("document.getElementById('password').classList.add('disabled');");
+          client.println("document.getElementById('ssid').classList.add('disabled');");
           client.println("}");
           client.println("document.getElementById('WifiTime').onchange = function () {");
+          client.println("document.getElementById('password').classList.add('disabled');");
+          client.println("document.getElementById('ssid').classList.add('disabled');");
           client.println("document.getElementById('ssid').setAttribute('disabled', 'disabled');");
           client.println("document.getElementById('password').setAttribute('disabled', 'disabled');");
           client.println("if (this.value == 'on') {");
+          client.println("document.getElementById('password').classList.remove('disabled');");
+          client.println("document.getElementById('ssid').classList.remove('disabled');");
           client.println("document.getElementById('ssid').removeAttribute('disabled');");
           client.println("document.getElementById('password').removeAttribute('disabled');");
           client.println("}");
@@ -1272,6 +1155,8 @@ void loop() {
           client.println("document.getElementById('myRange').removeAttribute('disabled');");
           client.println("} else {");
           client.println("document.getElementById('myRange').setAttribute('disabled', 'disabled');");
+
+
           client.println("}");
           client.println("document.getElementById('dimmer').onchange = function () {");
           client.println("document.getElementById('myRange').setAttribute('disabled', 'disabled');");
@@ -1367,6 +1252,11 @@ void loop() {
           client.println("data[e.id] = e.value;");
 
           client.println("});");
+
+          client.println("if (document.getElementById('WifiTime').value === 'off') {");
+          client.println("data['ssid'] = 'Bi-naryClockSetup'");
+          client.println("data['password'] = 'Bi-naryClockSetup'");
+          client.println("}");
           client.println("data['CurrentTime'] = Math.floor(Date.now() / 1000)");
           client.println("encodeDataToURL = (data) => {");
           client.println("return Object");
@@ -1375,7 +1265,7 @@ void loop() {
           client.println(".join('&');");
           client.println("}");
 
-          // console.log(encodeDataToURL(data));
+
           client.println("var mypost = encodeDataToURL(data)");
           client.println("mypost = mypost + '&Submit=Submit'");
           // console.log(mypost);
@@ -1405,8 +1295,6 @@ void loop() {
           client.println("request.send(mypost);");
           client.println("}");
           client.println("}");
-          //          client.println("           </script>");
-
           client.println("</script>");
           client.println("</BODY>");
           client.println("</HTML>");
@@ -1431,16 +1319,20 @@ void loop() {
                   Serial.println(String(valu));
                   if (String(name) == "?ssid") {
                     String ssidname = valu;
+                    if (ssidname == "Bi-naryClockSetup") {
+                      ssidname = "";
+                    }
                     ssidname.toCharArray(owner.wifissid, 100);
                   }
                   if (String(name) == "CurrentTime") {
                     String CurrentTime = valu;
                     epoch = strtoll(CurrentTime.c_str(), nullptr, 10);
-                    //rtc.adjust(DateTime( epoch + 4));
-                    // CurrentTime.toCharArray(owner.CurrentTime, 100);
                   }
                   if (String(name) == "password") {
                     String pass = valu;
+                    if (pass == "Bi-naryClockSetup") {
+                      pass = "";
+                    }
                     pass.toCharArray(owner.Password, 100);
                   }
                   if (String(name) == "timezone") {
