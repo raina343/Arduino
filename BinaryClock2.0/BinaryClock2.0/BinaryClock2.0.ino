@@ -493,7 +493,625 @@ uint32_t Wheel(byte WheelPos) {
 
 void clearsavedsettings() {
 }
+void SendAuthentificationpage(WiFiClient &client) {
+  client.println("HTTP/1.1 401 Authorization Required");
+  client.println("WWW-Authenticate: Basic realm=\"Secure Area\"");
+  client.println("Content-Type: text/html");
+  client.println("Connnection: close");
+  client.println();
+  client.println("<!DOCTYPE HTML>");
+  client.println("<HTML>  <HEAD>   <TITLE>Error</TITLE>");
+  client.println(" </HEAD> <BODY><H1>401 Unauthorized.</H1></BODY> </HTML>");
+}
 
+
+void SendOKpage(WiFiClient &client) {
+  String twelvehour = "";
+  if ((String)owner.twelvehr == "on") {
+    twelvehour = " selected='selected' ";
+  }
+  String WifiTimeSetting = "";
+  if ((String)owner.wifi == "on") {
+    WifiTimeSetting = " selected ";
+  }
+  String DimmerSetting = "";
+  if ((String)owner.dimmer == "of") {
+    DimmerSetting = " selected ";
+  }
+  Serial.println(DimmerSetting);
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: text/html");
+  client.println();
+  client.println("<HTML>");
+  client.println("<HEAD>");
+  client.println("<TITLE>Bi-nary Clock Setup</TITLE>");
+  client.println("<meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate' />");
+  client.println("<meta http-equiv='Pragma' content='no-cache' />");
+  client.println("<meta http-equiv='Expires' content='0' />");
+  client.println("</HEAD>");
+  client.println("<BODY>");
+  client.println("<style type='text/css'>");
+  client.println("*,");
+  client.println("*::before,");
+  client.println("*::after {");
+  client.println("box-sizing: border-box;");
+  client.println("}");
+  client.println(":root {");
+  client.println("--select-border: #777;");
+  client.println("--select-focus: blue;");
+  client.println("--select-arrow: var(--select-border);");
+  client.println("}");
+  client.print(".loader_website {");
+  client.print("position: fixed;");
+  client.print("top: 0;");
+  client.print("left: 0px;");
+  client.print("z-index: 1100;");
+  client.print("width: 100%;");
+  client.print("height: 100%;");
+  client.print("background-color: rgba(0, 0, 0, 0.5);");
+  client.print("display: block;");
+  client.print("-webkit-transition: ease-in-out 0.1s;");
+  client.print("-moz-transition: ease-in-out 0.1s;");
+  client.print("-o-transition: ease-in-out 0.1s;");
+  client.print("-ms-transition: ease-in-out 0.1s;");
+  client.print("transition: ease-in-out 0.1s;");
+  client.print("-webkit-box-sizing: border-box;");
+  client.print("-moz-box-sizing: border-box;");
+  client.print("-o-box-sizing: border-box;");
+  client.print("-ms-box-sizing: border-box;");
+  client.print("box-sizing: border-box;");
+  client.print("}");
+  client.print(".loader_website * {");
+  client.print("-webkit-box-sizing: border-box;");
+  client.print("-moz-box-sizing: border-box;");
+  client.print("-o-box-sizing: border-box;");
+  client.print("-ms-box-sizing: border-box;");
+  client.print("box-sizing: border-box;");
+  client.print("}");
+  client.print("body.loader .loader_website span {");
+  client.print("top: 18%;");
+  client.print("}");
+  client.print(".loader_website > span {");
+  client.print("display: block;");
+  client.print("width: 48px;");
+  client.print("height: 48px;");
+  client.print("padding: 4px;");
+  client.print("background-color: #ffffff;");
+  client.print("-webkit-border-radius: 100%;");
+  client.print("-moz-border-radius: 100%;");
+  client.print("-o-border-radius: 100%;");
+  client.print("-ms-border-radius: 100%;");
+  client.print("border-radius: 100%;");
+  client.print("position: absolute;");
+  client.print("left: 50%;");
+  client.print("margin-left: -24px;");
+  client.print("top: -50px;");
+  client.print("-webkit-transition: ease-in-out 0.1s;");
+  client.print("-moz-transition: ease-in-out 0.1s;");
+  client.print("-o-transition: ease-in-out 0.1s;");
+  client.print("-ms-transition: ease-in-out 0.1s;");
+  client.print("transition: ease-in-out 0.1s;");
+  client.print("-webkit-box-shadow: #000 0px 5px 10px -5px;");
+  client.print("-moz-box-shadow: #000 0px 5px 10px -5px;");
+  client.print("-o-box-shadow: #000 0px 5px 10px -5px;");
+  client.print("-ms-box-shadow: #000 0px 5px 10px -5px;");
+  client.print("box-shadow: #000 0px 5px 10px -5px;");
+  client.print("}");
+  client.print(".loader_website > span > svg {");
+  client.print("fill: transparent;");
+  client.print("stroke: #563d7c;");
+  client.print("stroke-width: 5;");
+  client.print("animation: loader_dash 2s ease infinite, loader_rotate 2s linear infinite;");
+  client.print("}");
+  client.print("@keyframes loader_dash {");
+  client.print("0% {");
+  client.print("stroke-dasharray: 1, 95;");
+  client.print("stroke-dashoffset: 0;");
+  client.print("}");
+  client.print("50% {");
+  client.print("stroke-dasharray: 85, 95;");
+  client.print("stroke-dashoffset: -25;");
+  client.print("}");
+  client.print("100% {");
+  client.print("stroke-dasharray: 85, 95;");
+  client.print("stroke-dashoffset: -93;");
+  client.print("}");
+  client.print("}");
+  client.print("@keyframes loader_rotate {");
+  client.print("0% {");
+  client.print("transform: rotate(0deg);");
+  client.print("}");
+  client.print("100% {");
+  client.print("transform: rotate(360deg);");
+  client.print("}");
+  client.print("}");
+  client.println("select {");
+  client.println("color: black;");
+  client.println("-webkit-appearance: none;");
+  client.println("-moz-appearance: none;");
+  client.println("appearance: none;");
+  client.println("background-color: transparent;");
+  client.println("border: none;");
+  client.println("padding: 0 1em 0 0;");
+  client.println("margin: 0;");
+  client.println("width: 100%;");
+  client.println("font-family: inherit;");
+  client.println("font-size: inherit;");
+  client.println("cursor: inherit;");
+  client.println("line-height: inherit;");
+  client.println("z-index: 1;");
+  client.println("outline: none;");
+  client.println("}");
+  client.println("select::-ms-expand {");
+  client.println("display: none;");
+  client.println("}");
+  client.println(".select {");
+  client.println("color: black;");
+  client.println("display: grid;");
+  client.println("grid-template-areas: 'select';");
+  client.println("align-items: center;");
+  client.println("position: relative;");
+  client.println("min-width: 15ch;");
+  client.println("max-width: 30ch;");
+  client.println("border: 1px solid var(--select-border);");
+  client.println("border-radius: 0.25em;");
+  client.println("padding: 0.25em 0.5em;");
+  client.println("font-size: 1.25rem;");
+  client.println("cursor: pointer;");
+  client.println("line-height: 1.1;");
+  client.println("background-color: #fff;");
+  client.println("background-image: linear-gradient(to top, #f9f9f9, #fff 33%);");
+  client.println("}");
+  client.println(".select select, .select::after {");
+  client.println("grid-area: select;");
+  client.println("}");
+  client.println(".select:not(.select--multiple)::after {");
+  client.println("content: '';");
+  client.println("justify-self: end;");
+  client.println("width: 0.8em;");
+  client.println("height: 0.5em;");
+  client.println("background-color: var(--select-arrow);");
+  client.println("-webkit-clip-path: polygon(100% 0%, 0 0%, 50% 100%);");
+  client.println("clip-path: polygon(100% 0%, 0 0%, 50% 100%);");
+  client.println("}");
+  client.println("select:focus + .focus {");
+  client.println("position: absolute;");
+  client.println("top: -1px;");
+  client.println("left: -1px;");
+  client.println("right: -1px;");
+  client.println("bottom: -1px;");
+  client.println("border: 2px solid var(--select-focus);");
+  client.println("border-radius: inherit;");
+  client.println("}");
+  client.println("select[multiple] {");
+  client.println("height: 6rem;");
+  client.println("}");
+  client.println("select[multiple] option {");
+  client.println("white-space: normal;");
+  client.println("outline-color: var(--select-focus);");
+  client.println("}");
+  client.println(".select--disabled {");
+  client.println("cursor: not-allowed;");
+  client.println("background-color: #eee;");
+  client.println("background-image: linear-gradient(to top, #ddd, #eee 33%);");
+  client.println("}");
+  client.println("label {");
+  client.println("font-size: 1.125rem;");
+  client.println("font-weight: 500;");
+  client.println("}");
+  client.println(".select + label {");
+  client.println("margin-top: 2rem;");
+  client.println("}");
+  client.println("body {");
+  client.println("min-height: 100vh;");
+  client.println("display: grid;");
+  client.println("place-content: center;");
+  client.println("grid-gap: 0.5rem;");
+  client.println("font-family: 'Baloo 2', sans-serif;");
+  client.println("/*background-color: #e9f2fd;*/");
+  client.println("padding: 1rem;");
+  client.println("}");
+  client.println(".formcontent label {");
+  client.println("/*color: red;*/");
+  client.println("display: block;");
+  client.println("}");
+  client.println(".formcontent {");
+  client.println("text-align: center;");
+  client.println("width: 30ch;");
+  client.println("margin: 0 auto;");
+  client.println("}");
+  client.println(".formcontent li {");
+  client.println("list-style: none;");
+  client.println("padding-top: 10px;");
+  client.println("width: 30ch;");
+  client.println("}");
+  client.println(".formcontent input {");
+  client.println("color: black;");
+  client.println("display: grid;");
+  client.println("grid-template-areas: 'select';");
+  client.println("align-items: center;");
+  client.println("position: relative;");
+  client.println("min-width: 15ch;");
+  client.println("max-width: 24ch;");
+  client.println("border: 1px solid var(--select-border);");
+  client.println("border-radius: 0.25em;");
+  client.println("padding: 0.25em 0.5em;");
+  client.println("font-size: 1.25rem;");
+  client.println("cursor: pointer;");
+  client.println("line-height: 1.1;");
+  client.println("background-color: #fff;");
+  client.println("text-align: center;");
+  client.println("background-image: linear-gradient(to top, #f9f9f9, #fff 33%);");
+  client.println("}");
+  client.println(".formcontent button {");
+  client.println("color: black;");
+  client.println("display: grid;");
+  client.println("grid-template-areas: 'select';");
+  client.println("align-items: center;");
+  client.println("position: relative;");
+  client.println("min-width: 15ch;");
+  client.println("max-width: 24ch;");
+  client.println("border: 1px solid var(--select-border);");
+  client.println("border-radius: 0.25em;");
+  client.println("padding: 0.25em 0.5em;");
+  client.println("font-size: 1.25rem;");
+  client.println("cursor: pointer;");
+  client.println("line-height: 1.1;");
+  client.println("background-color: #fff;");
+  client.println("text-align: center;");
+  client.println("background-image: linear-gradient(to top, #f9f9f9, #fff 33%);");
+  client.println("}");
+  client.println("html {");
+  client.println("background: linear-gradient(145deg,");
+  client.println("rgba(43, 9, 82, 1) 9%,");
+  client.println("rgba(2, 2, 255, 1) 18%,");
+  client.println("rgba(2, 255, 2, 1) 27%,");
+  client.println("rgba(196, 181, 0, 1) 36%,");
+  client.println("rgba(255, 165, 0, 1) 45%,");
+  client.println("rgba(162, 19, 19, 1) 63%,");
+  client.println("rgba(255, 165, 0, 1) 72%,");
+  client.println("rgba(196, 181, 0, 1) 81%,");
+  client.println("rgba(2, 255, 2, 1) 90%,");
+  client.println("rgba(2, 2, 255, 1) 99%,");
+  client.println("rgba(43, 9, 82, 1) 100%);");
+  client.println("background-size: 400% 400%;");
+  client.println("animation: gradient 5s ease infinite;");
+  client.println("height: 100vh;");
+  client.println("width: 100vw;");
+  client.println("align-items: center;");
+  client.println("justify-content: center;");
+  client.println("}");
+  client.println("@keyframes gradient {");
+  client.println("0% {");
+  client.println("background-position: 0% 50%;");
+  client.println("}");
+  client.println("50% {");
+  client.println("background-position: 100% 50%;");
+  client.println("}");
+  client.println("100% {");
+  client.println("background-position: 0% 50%;");
+  client.println("}");
+  client.println("}");
+  client.println(".loader {");
+  client.println("border: 16px solid #f3f3f3; /* Light grey */");
+  client.println("border-style: solid;");
+  client.println("border-width: 0px;");
+  client.println("}");
+  client.println("@keyframes spin {");
+  client.println("0% {");
+  client.println("transform: rotate(0deg);");
+  client.println("}");
+  client.println("100% {");
+  client.println("transform: rotate(360deg);");
+  client.println("}");
+  client.println("}");
+  client.println(".slidecontainer {width: 100%;}");
+  client.println(".slider {-webkit-appearance: none;width: 100%;height: 25px;background: #d3d3d3;outline: none;opacity: 0.7;-webkit-transition: .2s;transition: opacity .2s;}");
+  client.println(".slider:hover {opacity: 1;}");
+  client.println(".slider::-webkit-slider-thumb {-webkit-appearance: none;appearance: none;width: 25px;height: 25px;background: #04AA6D;cursor: pointer;}");
+  client.println(".slider::-moz-range-thumb {width: 25px;height: 25px;background: #04AA6D;cursor: pointer;}");
+  client.println(".slider:disabled::-webkit-slider-thumb{background: grey;cursor: not-allowed !important;}");
+  client.println(".slider:disabled::-moz-range-thumb{background: grey;cursor: not-allowed !important;}");
+  client.println(".slider:disabled{cursor: not-allowed !important;}");
+  client.println(".formcontent input.disabled {background: #c0c0c0;}");
+  client.println("</style>");
+  client.println("<header class='container-col'>");
+  client.println("</header>");
+  client.println("<div class='formcontent'>");
+  client.println("<ul>");
+  client.println("<li>");
+  client.println("<label for='WifiTime'>Use Wifi to get Time</label>");
+  client.println("<div class='select'>");
+  client.print("<select name='WifiTime' id='WifiTime'>");
+  client.print("<option value='off'>off</option>");
+  client.print("<option value='on' ");
+  client.print(WifiTimeSetting);
+  client.print(">on</option>");
+  client.print("</select>");
+  client.println("<span class='focus'></span>");
+  client.println("</div>");
+  client.println("</li>");
+  client.println("<Li>");
+  client.println("<H3>Enter your SSID and Password below. </h3>");
+  client.println("</Li>");
+  client.println("<Li>");
+  client.println("<label for='ssid'>SSID</label>");
+  client.println("<input id='ssid' required type='text' name='ssid'");
+  client.print("value='");
+  client.print(owner.wifissid);
+  client.print("' placeholder='ssid'>");
+  client.println("</Li>");
+  client.println("<li>");
+  client.println("<label for='password'>Password</label>");
+  client.println("<input id='password'");
+  client.println("type='password'");
+  client.println("name='password'");
+  client.println("value='");
+  client.print(owner.Password);
+  client.print("' placeholder='password' required><br>");
+  client.println("</li>");
+  client.println("<li>");
+  client.println("<label for='12hr'>Show 12hr Time</label>");
+  client.println("<div class='select'>");
+  client.println("<select name='12hr' id='12hr'>");
+  client.print("<option value='off'>off</option>");
+  client.print("<option value='on' ");
+  client.print(twelvehour);
+  client.print(">on</option>");
+  client.print("</select>");
+  client.println("<span class='focus'></span>");
+  client.println("</div>");
+  client.println("</li>");
+  client.println("<li>");
+  client.println("<label for='timezone'>Timezone</label>");
+  client.println("<div class='select'>");
+  client.println("<select name='timezone' id='timezone'>");
+  client.print("<option value='EST' ");
+  if ((String)owner.timezone == "EST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Eastern</option>");
+  client.print("<option value='CST' ");
+  if ((String)owner.timezone == "CST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Central</option>");
+  client.print("<option value='MST' ");
+  if ((String)owner.timezone == "MST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Mountain</option>");
+  client.print("<option value='PST' ");
+  if ((String)owner.timezone == "PST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Pacific</option>");
+  client.print("<option value='KST' ");
+  if ((String)owner.timezone == "KST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Alaska</option>");
+  client.print("<option value='HST' ");
+  if ((String)owner.timezone == "HST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Hawaii</option>");
+  client.print("<option value='ZST' ");
+  if ((String)owner.timezone == "ZST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Arizona</option>");
+  client.print("<option value='GMT' ");
+  if ((String)owner.timezone == "GMT") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">GMT</option>");
+  client.print("<option value='CET' ");
+  if ((String)owner.timezone == "CET") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Central European Time</option>");
+  client.print("<option value='AST' ");
+  if ((String)owner.timezone == "AST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Argentina Standard Time</option>");
+  client.print("<option value='IST' ");
+  if ((String)owner.timezone == "IST") {
+    client.print(" selected='selected' ");
+  }
+  client.print(">Indian Standard Time</option>");
+  client.print("</select>");
+  client.println("<li>");
+  client.println("<label for='dimmer'>Enable Auto Dimming</label>");
+  client.println("<div class='select'>");
+  client.println("<select name='dimmer' id='dimmer'>");
+  client.print("<option value='on'>on</option>");
+  client.print("<option value='off' ");
+  client.print(DimmerSetting);
+  client.print(">off</option>");
+  client.print("</select>");
+  client.println("<span class='focus'></span>");
+  client.println("</div>");
+  client.println("</li>");
+  client.println("<li>");
+  client.println("<label for='myrange'>Display Brightness</label>");
+  client.println("<div class='slidecontainer'>");
+  client.println("<input type='range' name='range' min='1' max='255' ");
+  client.print("value='");
+  String Brightnesslevel = (String)owner.brightness;
+  Brightnesslevel.trim();
+  client.print(Brightnesslevel);
+  client.print("' class='slider' id='myRange'>");
+  client.println("<input type='hidden' name='rangevalue' ");
+  client.print("value='");
+  client.print(Brightnesslevel);
+  client.print("' id='rangevalue'>");
+  client.println(" </div>");
+  client.println("</li>");
+  client.println("<li>");
+  client.println("<button id='Submit' name='Submit' value='Submit' onclick='submit();' >Save</button>");
+  client.println("</li>");
+  client.println("</ul>");
+  client.println("</div>");
+  client.println("<script>");
+  client.println("if (document.getElementById('WifiTime').value === 'on') {");
+  client.println("document.getElementById('ssid').removeAttribute('disabled');");
+  client.println("document.getElementById('password').removeAttribute('disabled');");
+  client.println("} else {");
+  client.println("document.getElementById('ssid').setAttribute('disabled', 'disabled');");
+  client.println("document.getElementById('password').setAttribute('disabled', 'disabled');");
+  client.println("document.getElementById('password').classList.add('disabled');");
+  client.println("document.getElementById('ssid').classList.add('disabled');");
+  client.println("}");
+  client.println("document.getElementById('WifiTime').onchange = function () {");
+  client.println("document.getElementById('password').classList.add('disabled');");
+  client.println("document.getElementById('ssid').classList.add('disabled');");
+  client.println("document.getElementById('ssid').setAttribute('disabled', 'disabled');");
+  client.println("document.getElementById('password').setAttribute('disabled', 'disabled');");
+  client.println("if (this.value == 'on') {");
+  client.println("document.getElementById('password').classList.remove('disabled');");
+  client.println("document.getElementById('ssid').classList.remove('disabled');");
+  client.println("document.getElementById('ssid').removeAttribute('disabled');");
+  client.println("document.getElementById('password').removeAttribute('disabled');");
+  client.println("}");
+  client.println("};");
+  client.println("if (document.getElementById('dimmer').value === 'off') {");
+  client.println("document.getElementById('myRange').removeAttribute('disabled');");
+  client.println("} else {");
+  client.println("document.getElementById('myRange').setAttribute('disabled', 'disabled');");
+  client.println("}");
+  client.println("document.getElementById('dimmer').onchange = function () {");
+  client.println("document.getElementById('myRange').setAttribute('disabled', 'disabled');");
+  client.println("if (this.value == 'off') {");
+  client.println("document.getElementById('myRange').removeAttribute('disabled');");
+  client.println("}");
+  client.println("};");
+  client.println("var slider = document.getElementById('myRange');");
+  client.println("var output = document.getElementById('rangevalue');");
+  client.println("output.value = slider.value;");
+  client.println("slider.oninput = function() {");
+  client.println("  output.value = this.value;");
+  client.println("  slider.value = this.value;");
+  client.println("}");
+  client.print("var Loader = {");
+  client.print("loader: null,");
+  client.print("body: null,");
+  client.print("html: '<span><svg width=\\'40\\' height=\\'40\\' version=\\'1.1\\' xmlns=\\'http://www.w3.org/2000/svg\\'><circle cx=\\'20\\' cy=\\'20\\' r=\\'15\\'></svg></span>',");
+  client.print("cssClass: 'loader',");
+  client.print("check: function () {");
+  client.print("if (this.body == null) {");
+  client.print("this.body = document.getElementsByTagName('body')[0];");
+  client.print("}");
+  client.print("},");
+  client.print("open: function () {");
+  client.print("this.check();");
+  client.print("if (!this.isOpen()) {");
+  client.print("this.loader = document.createElement('div');");
+  client.print("this.loader.setAttribute('id', 'loader');");
+  client.print("this.loader.classList.add('loader_website');");
+  client.print("this.loader.innerHTML = this.html;");
+  client.print("this.body.appendChild(this.loader);");
+  client.print("setTimeout(function () {");
+  client.print("Loader.body.classList.add(Loader.cssClass);");
+  client.print("}, 1);");
+  client.print("}");
+  client.print("return this;");
+  client.print("},");
+  client.print("close: function () {");
+  client.print("this.check();");
+  client.print("if (this.isOpen()) {");
+  client.print("this.body.classList.remove(this.cssClass);");
+  client.print("setTimeout(function () {");
+  client.print("Loader.loader.remove();");
+  client.print("}, 100);");
+  client.print("}");
+  client.print("return this;");
+  client.print("},");
+  client.print("isOpen: function () {");
+  client.print("this.check();");
+  client.print("return this.body.classList.contains(this.cssClass);");
+  client.print("},");
+  client.print("ifOpened: function (callback, close) {");
+  client.print("this.check();");
+  client.print("if (this.isOpen()) {");
+  client.print("if (!!close)");
+  client.print("this.close();");
+  client.print("if (typeof callback === 'function') {");
+  client.print("callback();");
+  client.print("}");
+  client.print("}");
+  client.print("return this;");
+  client.print("},");
+  client.print("ifClosed: function (callback, open) {");
+  client.print("this.check();");
+  client.print("if (!this.isOpen()) {");
+  client.print("if (!!open)");
+  client.print("this.open();");
+  client.print("if (typeof callback === 'function') {");
+  client.print("callback();");
+  client.print("}");
+  client.print("}");
+  client.print("return this;");
+  client.print("}");
+  client.print("};");
+  client.println("function submit() {");
+  client.println("Loader.open();");
+  client.println("var FormValid = true;");
+  client.println("var data = [];");
+  client.println(" const container = document.querySelector('div.formcontent');");
+  client.println(" container.querySelectorAll('input').forEach(function (e) {");
+  client.println("  if (e.validity.valueMissing) {");
+  client.println("    FormValid = false;");
+  client.println(";  }");
+  client.println("  data[e.id] = e.value;");
+  client.println("});");
+  client.println("container.querySelectorAll('select').forEach(function (e) {");
+  client.println("data[e.id] = e.value;");
+  client.println("});");
+  client.println("if (document.getElementById('WifiTime').value === 'off') {");
+  client.println("data['ssid'] = 'Bi-naryClockSetup'");
+  client.println("data['password'] = 'Bi-naryClockSetup'");
+  client.println("}");
+  client.println("data['CurrentTime'] = Math.floor(Date.now() / 1000)");
+  client.println("encodeDataToURL = (data) => {");
+  client.println("return Object");
+  client.println(".keys(data)");
+  client.println(".map(value => `${value}=${encodeURIComponent(data[value])}`)");
+  client.println(".join('&');");
+  client.println("}");
+  client.println("var mypost = encodeDataToURL(data)");
+  client.println("mypost = mypost + '&Submit=Submit'");
+  // console.log(mypost);
+  client.println("if (FormValid) {");
+  client.println("var request = new XMLHttpRequest();");
+  client.println("request.open('GET', '/', true);");
+  client.println("request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');");
+  client.println("request.setRequestHeader('mydata','/?'+encodeDataToURL(data));");
+  client.println("request.onreadystatechange = function () {");
+  client.println("if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {");
+  client.println("console.log('succeed');");
+  client.print("Loader.close()");
+  client.println("} else {");
+  client.println("console.log('server error');");
+  client.print("Loader.close()");
+  client.println("}");
+  client.println("};");
+  client.println("request.onerror = function () {");
+  client.println("console.log('something went wrong');");
+  client.print("Loader.close()");
+  client.println("};");
+  client.println("request.send(mypost);");
+  client.println("}");
+  client.println("}");
+  client.println("</script>");
+  client.println("</BODY>");
+  client.println("</HTML>");
+  // break;
+}
+char linebuf[80];
+int charcount = 0;
+boolean authentificated = false;
 void loop() {
   if (digitalRead(clearsettings) == LOW) {
 
@@ -509,7 +1127,6 @@ void loop() {
     } else {
       if (server.status()) {
       } else {
-        //        Serial.println("I Should be trying to start the server");
         server.begin();
       }
     }
@@ -567,740 +1184,34 @@ void loop() {
   }
   WiFiClient client = server.available();
   if (client) {
+    memset(linebuf, 0, sizeof(linebuf));
+    charcount = 0;
+    authentificated = false;
     bool currentLineIsBlank = true;
     while (client.connected()) {
       if (client.available()) {
         char c = client.read();
+        linebuf[charcount] = c;
+        if (charcount < sizeof(linebuf) - 1) charcount++;
+        Serial.write(c);
         readString += c;
 
         if (c == '\n' && currentLineIsBlank) {
-          String twelvehour = "";
-          if ((String)owner.twelvehr == "on") {
-            twelvehour = " selected='selected' ";
-          }
-          // String ShowTempUnitsSetting = "";
-          // if ((String)owner.tempUnits == "F") {
-          //   ShowTempUnitsSetting = " selected ";
-          // }
-          // String ShowTempAUnitsSetting = "";
-          // if ((String)owner.tempUnits == "A") {
-          //   ShowTempAUnitsSetting = " selected ";
-          // }
-          String WifiTimeSetting = "";
-          if ((String)owner.wifi == "on") {
-            WifiTimeSetting = " selected ";
-          }
-          String DimmerSetting = "";
-          if ((String)owner.dimmer == "of") {
-            DimmerSetting = " selected ";
-          }
-          //String foo = listNetworks();
-          Serial.println(DimmerSetting);
-
-          // Serial.println((String)owner.brightness);
-
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println();
-          client.println("<HTML>");
-          client.println("<HEAD>");
-          client.println("<TITLE>Bi-nary Clock Setup</TITLE>");
-
-          client.println("<meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate' />");
-
-          client.println("<meta http-equiv='Pragma' content='no-cache' />");
-
-          client.println("<meta http-equiv='Expires' content='0' />");
-
-          client.println("</HEAD>");
-
-          client.println("<BODY>");
-
-          client.println("<style type='text/css'>");
-          client.println("*,");
-          client.println("*::before,");
-          client.println("*::after {");
-          client.println("box-sizing: border-box;");
-          client.println("}");
-
-          client.println(":root {");
-          client.println("--select-border: #777;");
-          client.println("--select-focus: blue;");
-          client.println("--select-arrow: var(--select-border);");
-          client.println("}");
-
-          client.print(".loader_website {");
-          client.print("position: fixed;");
-          client.print("top: 0;");
-          client.print("left: 0px;");
-          client.print("z-index: 1100;");
-          client.print("width: 100%;");
-          client.print("height: 100%;");
-          client.print("background-color: rgba(0, 0, 0, 0.5);");
-          client.print("display: block;");
-
-          client.print("-webkit-transition: ease-in-out 0.1s;");
-          client.print("-moz-transition: ease-in-out 0.1s;");
-          client.print("-o-transition: ease-in-out 0.1s;");
-          client.print("-ms-transition: ease-in-out 0.1s;");
-          client.print("transition: ease-in-out 0.1s;");
-
-          client.print("-webkit-box-sizing: border-box;");
-          client.print("-moz-box-sizing: border-box;");
-          client.print("-o-box-sizing: border-box;");
-          client.print("-ms-box-sizing: border-box;");
-          client.print("box-sizing: border-box;");
-          client.print("}");
-
-          client.print(".loader_website * {");
-          client.print("-webkit-box-sizing: border-box;");
-          client.print("-moz-box-sizing: border-box;");
-          client.print("-o-box-sizing: border-box;");
-          client.print("-ms-box-sizing: border-box;");
-          client.print("box-sizing: border-box;");
-          client.print("}");
-
-          client.print("body.loader .loader_website span {");
-          client.print("top: 18%;");
-          client.print("}");
-
-          client.print(".loader_website > span {");
-          client.print("display: block;");
-          client.print("width: 48px;");
-          client.print("height: 48px;");
-          client.print("padding: 4px;");
-          client.print("background-color: #ffffff;");
-          client.print("-webkit-border-radius: 100%;");
-          client.print("-moz-border-radius: 100%;");
-          client.print("-o-border-radius: 100%;");
-          client.print("-ms-border-radius: 100%;");
-          client.print("border-radius: 100%;");
-          client.print("position: absolute;");
-          client.print("left: 50%;");
-          client.print("margin-left: -24px;");
-          client.print("top: -50px;");
-
-          client.print("-webkit-transition: ease-in-out 0.1s;");
-          client.print("-moz-transition: ease-in-out 0.1s;");
-          client.print("-o-transition: ease-in-out 0.1s;");
-          client.print("-ms-transition: ease-in-out 0.1s;");
-          client.print("transition: ease-in-out 0.1s;");
-
-          client.print("-webkit-box-shadow: #000 0px 5px 10px -5px;");
-          client.print("-moz-box-shadow: #000 0px 5px 10px -5px;");
-          client.print("-o-box-shadow: #000 0px 5px 10px -5px;");
-          client.print("-ms-box-shadow: #000 0px 5px 10px -5px;");
-          client.print("box-shadow: #000 0px 5px 10px -5px;");
-          client.print("}");
-
-          client.print(".loader_website > span > svg {");
-          client.print("fill: transparent;");
-          client.print("stroke: #563d7c;");
-          client.print("stroke-width: 5;");
-          client.print("animation: loader_dash 2s ease infinite, loader_rotate 2s linear infinite;");
-          client.print("}");
-
-          client.print("@keyframes loader_dash {");
-          client.print("0% {");
-          client.print("stroke-dasharray: 1, 95;");
-          client.print("stroke-dashoffset: 0;");
-          client.print("}");
-          client.print("50% {");
-          client.print("stroke-dasharray: 85, 95;");
-          client.print("stroke-dashoffset: -25;");
-          client.print("}");
-          client.print("100% {");
-          client.print("stroke-dasharray: 85, 95;");
-          client.print("stroke-dashoffset: -93;");
-          client.print("}");
-          client.print("}");
-
-          client.print("@keyframes loader_rotate {");
-          client.print("0% {");
-          client.print("transform: rotate(0deg);");
-          client.print("}");
-          client.print("100% {");
-          client.print("transform: rotate(360deg);");
-          client.print("}");
-          client.print("}");
-
-          client.println("select {");
-          client.println("color: black;");
-          client.println("-webkit-appearance: none;");
-          client.println("-moz-appearance: none;");
-          client.println("appearance: none;");
-          client.println("background-color: transparent;");
-          client.println("border: none;");
-          client.println("padding: 0 1em 0 0;");
-          client.println("margin: 0;");
-          client.println("width: 100%;");
-          client.println("font-family: inherit;");
-          client.println("font-size: inherit;");
-          client.println("cursor: inherit;");
-          client.println("line-height: inherit;");
-          client.println("z-index: 1;");
-          client.println("outline: none;");
-          client.println("}");
-
-          client.println("select::-ms-expand {");
-          client.println("display: none;");
-          client.println("}");
-
-          client.println(".select {");
-          client.println("color: black;");
-          client.println("display: grid;");
-          client.println("grid-template-areas: 'select';");
-          client.println("align-items: center;");
-          client.println("position: relative;");
-          client.println("min-width: 15ch;");
-          client.println("max-width: 30ch;");
-          client.println("border: 1px solid var(--select-border);");
-          client.println("border-radius: 0.25em;");
-          client.println("padding: 0.25em 0.5em;");
-          client.println("font-size: 1.25rem;");
-          client.println("cursor: pointer;");
-          client.println("line-height: 1.1;");
-          client.println("background-color: #fff;");
-          client.println("background-image: linear-gradient(to top, #f9f9f9, #fff 33%);");
-          client.println("}");
-
-          client.println(".select select, .select::after {");
-          client.println("grid-area: select;");
-          client.println("}");
-
-          client.println(".select:not(.select--multiple)::after {");
-          client.println("content: '';");
-          client.println("justify-self: end;");
-          client.println("width: 0.8em;");
-          client.println("height: 0.5em;");
-          client.println("background-color: var(--select-arrow);");
-          client.println("-webkit-clip-path: polygon(100% 0%, 0 0%, 50% 100%);");
-          client.println("clip-path: polygon(100% 0%, 0 0%, 50% 100%);");
-          client.println("}");
-
-          client.println("select:focus + .focus {");
-          client.println("position: absolute;");
-          client.println("top: -1px;");
-          client.println("left: -1px;");
-          client.println("right: -1px;");
-          client.println("bottom: -1px;");
-          client.println("border: 2px solid var(--select-focus);");
-          client.println("border-radius: inherit;");
-          client.println("}");
-
-          client.println("select[multiple] {");
-
-          client.println("height: 6rem;");
-          client.println("}");
-
-          client.println("select[multiple] option {");
-          client.println("white-space: normal;");
-          client.println("outline-color: var(--select-focus);");
-          client.println("}");
-
-          client.println(".select--disabled {");
-          client.println("cursor: not-allowed;");
-          client.println("background-color: #eee;");
-          client.println("background-image: linear-gradient(to top, #ddd, #eee 33%);");
-          client.println("}");
-
-          client.println("label {");
-          client.println("font-size: 1.125rem;");
-          client.println("font-weight: 500;");
-          client.println("}");
-
-          client.println(".select + label {");
-          client.println("margin-top: 2rem;");
-          client.println("}");
-
-          client.println("body {");
-          client.println("min-height: 100vh;");
-          client.println("display: grid;");
-          client.println("place-content: center;");
-          client.println("grid-gap: 0.5rem;");
-          client.println("font-family: 'Baloo 2', sans-serif;");
-          client.println("/*background-color: #e9f2fd;*/");
-          client.println("padding: 1rem;");
-          client.println("}");
-
-          client.println(".formcontent label {");
-          client.println("/*color: red;*/");
-          client.println("display: block;");
-          client.println("}");
-
-          client.println(".formcontent {");
-          client.println("text-align: center;");
-          client.println("width: 30ch;");
-          client.println("margin: 0 auto;");
-          client.println("}");
-
-          client.println(".formcontent li {");
-          client.println("list-style: none;");
-          client.println("padding-top: 10px;");
-          client.println("width: 30ch;");
-          client.println("}");
-
-          client.println(".formcontent input {");
-          client.println("color: black;");
-          client.println("display: grid;");
-          client.println("grid-template-areas: 'select';");
-          client.println("align-items: center;");
-          client.println("position: relative;");
-          client.println("min-width: 15ch;");
-          client.println("max-width: 24ch;");
-          client.println("border: 1px solid var(--select-border);");
-          client.println("border-radius: 0.25em;");
-          client.println("padding: 0.25em 0.5em;");
-          client.println("font-size: 1.25rem;");
-          client.println("cursor: pointer;");
-          client.println("line-height: 1.1;");
-          client.println("background-color: #fff;");
-          client.println("text-align: center;");
-          client.println("background-image: linear-gradient(to top, #f9f9f9, #fff 33%);");
-          client.println("}");
-
-          client.println(".formcontent button {");
-          client.println("color: black;");
-          client.println("display: grid;");
-          client.println("grid-template-areas: 'select';");
-          client.println("align-items: center;");
-          client.println("position: relative;");
-          client.println("min-width: 15ch;");
-          client.println("max-width: 24ch;");
-          client.println("border: 1px solid var(--select-border);");
-          client.println("border-radius: 0.25em;");
-          client.println("padding: 0.25em 0.5em;");
-          client.println("font-size: 1.25rem;");
-          client.println("cursor: pointer;");
-          client.println("line-height: 1.1;");
-          client.println("background-color: #fff;");
-          client.println("text-align: center;");
-          client.println("background-image: linear-gradient(to top, #f9f9f9, #fff 33%);");
-          client.println("}");
-
-          client.println("html {");
-
-          client.println("background: linear-gradient(145deg,");
-          client.println("rgba(43, 9, 82, 1) 9%,");
-          client.println("rgba(2, 2, 255, 1) 18%,");
-          client.println("rgba(2, 255, 2, 1) 27%,");
-          client.println("rgba(196, 181, 0, 1) 36%,");
-          client.println("rgba(255, 165, 0, 1) 45%,");
-          client.println("rgba(162, 19, 19, 1) 63%,");
-          client.println("rgba(255, 165, 0, 1) 72%,");
-          client.println("rgba(196, 181, 0, 1) 81%,");
-          client.println("rgba(2, 255, 2, 1) 90%,");
-          client.println("rgba(2, 2, 255, 1) 99%,");
-          client.println("rgba(43, 9, 82, 1) 100%);");
-
-          client.println("background-size: 400% 400%;");
-          client.println("animation: gradient 5s ease infinite;");
-
-          client.println("height: 100vh;");
-          client.println("width: 100vw;");
-          client.println("align-items: center;");
-          client.println("justify-content: center;");
-          client.println("}");
-
-          client.println("@keyframes gradient {");
-          client.println("0% {");
-          client.println("background-position: 0% 50%;");
-          client.println("}");
-          client.println("50% {");
-          client.println("background-position: 100% 50%;");
-          client.println("}");
-          client.println("100% {");
-          client.println("background-position: 0% 50%;");
-          client.println("}");
-          client.println("}");
-
-          client.println(".loader {");
-          client.println("border: 16px solid #f3f3f3; /* Light grey */");
-          client.println("border-style: solid;");
-          client.println("border-width: 0px;");
-
-          client.println("}");
-
-          client.println("@keyframes spin {");
-          client.println("0% {");
-          client.println("transform: rotate(0deg);");
-          client.println("}");
-          client.println("100% {");
-          client.println("transform: rotate(360deg);");
-          client.println("}");
-          client.println("}");
-
-          client.println(".slidecontainer {width: 100%;}");
-
-          client.println(".slider {-webkit-appearance: none;width: 100%;height: 25px;background: #d3d3d3;outline: none;opacity: 0.7;-webkit-transition: .2s;transition: opacity .2s;}");
-
-          client.println(".slider:hover {opacity: 1;}");
-
-          client.println(".slider::-webkit-slider-thumb {-webkit-appearance: none;appearance: none;width: 25px;height: 25px;background: #04AA6D;cursor: pointer;}");
-
-          client.println(".slider::-moz-range-thumb {width: 25px;height: 25px;background: #04AA6D;cursor: pointer;}");
-          client.println(".slider:disabled::-webkit-slider-thumb{background: grey;cursor: not-allowed !important;}");
-          client.println(".slider:disabled::-moz-range-thumb{background: grey;cursor: not-allowed !important;}");
-          client.println(".slider:disabled{cursor: not-allowed !important;}");
-          client.println(".formcontent input.disabled {background: #c0c0c0;}");
-          client.println("</style>");
-
-          client.println("<header class='container-col'>");
-
-          client.println("</header>");
-          ////  client.print("<form method='get' action=''>");
-          //  client.println("<form onsubmit='return false'>");
-          client.println("<div class='formcontent'>");
-          client.println("<ul>");
-          client.println("<li>");
-          client.println("<label for='WifiTime'>Use Wifi to get Time</label>");
-          client.println("<div class='select'>");
-          client.print("<select name='WifiTime' id='WifiTime'>");
-          client.print("<option value='off'>off</option>");
-          client.print("<option value='on' ");
-          client.print(WifiTimeSetting);
-          client.print(">on</option>");
-          client.print("</select>");
-          client.println("<span class='focus'></span>");
-          client.println("</div>");
-
-          client.println("</li>");
-          client.println("<Li>");
-          client.println("<H3>Enter your SSID and Password below. </h3>");
-          client.println("</Li>");
-          client.println("<Li>");
-          client.println("<label for='ssid'>SSID</label>");
-          client.println("<input id='ssid' required type='text' name='ssid'");
-          client.print("value='");
-          client.print(owner.wifissid);
-          client.print("' placeholder='ssid'>");
-          client.println("</Li>");
-          client.println("<li>");
-          client.println("<label for='password'>Password</label>");
-          client.println("<input id='password'");
-          client.println("type='password'");
-          client.println("name='password'");
-          client.println("value='");
-          client.print(owner.Password);
-          client.print("' placeholder='password' required><br>");
-
-          client.println("</li>");
-
-
-          // client.println("<li>");
-          // client.println("<label for='TempUnits'>Temperature Units</label>");
-          // client.println("<div class='select'>");
-          // client.print("<select name='TempUnits' id='TempUnits'>");
-          // client.print("<option value='C'>C</option>");
-          // client.print("<option value='F' ");
-          // client.print(ShowTempUnitsSetting);
-          // client.print(">F</option>");
-          // client.print("<option value='A' ");
-          // client.print(ShowTempAUnitsSetting);
-          // client.print(">Aditi Units</option>");
-          // client.print("</select>");
-          // client.println("<span class='focus'></span>");
-          // client.println("</div>");
-
-          // client.println("</li>");
-          client.println("<li>");
-          client.println("<label for='12hr'>Show 12hr Time</label>");
-          client.println("<div class='select'>");
-          client.println("<select name='12hr' id='12hr'>");
-          client.print("<option value='off'>off</option>");
-          client.print("<option value='on' ");
-          client.print(twelvehour);
-          client.print(">on</option>");
-          client.print("</select>");
-          client.println("<span class='focus'></span>");
-          client.println("</div>");
-
-          client.println("</li>");
-          client.println("<li>");
-          client.println("<label for='timezone'>Timezone</label>");
-          client.println("<div class='select'>");
-          client.println("<select name='timezone' id='timezone'>");
-          client.print("<option value='EST' ");
-          if ((String)owner.timezone == "EST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Eastern</option>");
-          client.print("<option value='CST' ");
-          if ((String)owner.timezone == "CST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Central</option>");
-          client.print("<option value='MST' ");
-          if ((String)owner.timezone == "MST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Mountain</option>");
-          client.print("<option value='PST' ");
-          if ((String)owner.timezone == "PST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Pacific</option>");
-          client.print("<option value='KST' ");
-          if ((String)owner.timezone == "KST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Alaska</option>");
-          client.print("<option value='HST' ");
-          if ((String)owner.timezone == "HST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Hawaii</option>");
-          client.print("<option value='ZST' ");
-          if ((String)owner.timezone == "ZST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Arizona</option>");
-          client.print("<option value='GMT' ");
-          if ((String)owner.timezone == "GMT") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">GMT</option>");
-          client.print("<option value='CET' ");
-          if ((String)owner.timezone == "CET") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Central European Time</option>");
-          client.print("<option value='AST' ");
-          if ((String)owner.timezone == "AST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Argentina Standard Time</option>");
-          client.print("<option value='IST' ");
-          if ((String)owner.timezone == "IST") {
-            client.print(" selected='selected' ");
-          }
-          client.print(">Indian Standard Time</option>");
-
-          client.print("</select>");
-
-          client.println("<li>");
-          client.println("<label for='dimmer'>Enable Auto Dimming</label>");
-          client.println("<div class='select'>");
-          client.println("<select name='dimmer' id='dimmer'>");
-          client.print("<option value='on'>on</option>");
-          client.print("<option value='off' ");
-          client.print(DimmerSetting);
-          client.print(">off</option>");
-          client.print("</select>");
-          client.println("<span class='focus'></span>");
-          client.println("</div>");
-
-          client.println("</li>");
-          client.println("<li>");
-
-          client.println("<label for='myrange'>Display Brightness</label>");
-
-          client.println("<div class='slidecontainer'>");
-          client.println("<input type='range' name='range' min='1' max='255' ");
-
-          client.print("value='");
-
-          String Brightnesslevel = (String)owner.brightness;
-          Brightnesslevel.trim();
-          client.print(Brightnesslevel);
-
-          client.print("' class='slider' id='myRange'>");
-          client.println("<input type='hidden' name='rangevalue' ");
-          client.print("value='");
-          client.print(Brightnesslevel);
-          client.print("' id='rangevalue'>");
-          // client.println(" <p>Value: <span id='demo'></span></p>");
-          client.println(" </div>");
-
-          client.println("</li>");
-
-          client.println("<li>");
-          client.println("<button id='Submit' name='Submit' value='Submit' onclick='submit();' >Save</button>");
-          client.println("</li>");
-          client.println("</ul>");
-          client.println("</div>");
-          //  client.println("</form>");
-          client.println("<script>");
-
-
-          client.println("if (document.getElementById('WifiTime').value === 'on') {");
-          client.println("document.getElementById('ssid').removeAttribute('disabled');");
-          client.println("document.getElementById('password').removeAttribute('disabled');");
-          client.println("} else {");
-          client.println("document.getElementById('ssid').setAttribute('disabled', 'disabled');");
-          client.println("document.getElementById('password').setAttribute('disabled', 'disabled');");
-
-          client.println("document.getElementById('password').classList.add('disabled');");
-          client.println("document.getElementById('ssid').classList.add('disabled');");
-          client.println("}");
-          client.println("document.getElementById('WifiTime').onchange = function () {");
-          client.println("document.getElementById('password').classList.add('disabled');");
-          client.println("document.getElementById('ssid').classList.add('disabled');");
-          client.println("document.getElementById('ssid').setAttribute('disabled', 'disabled');");
-          client.println("document.getElementById('password').setAttribute('disabled', 'disabled');");
-          client.println("if (this.value == 'on') {");
-          client.println("document.getElementById('password').classList.remove('disabled');");
-          client.println("document.getElementById('ssid').classList.remove('disabled');");
-          client.println("document.getElementById('ssid').removeAttribute('disabled');");
-          client.println("document.getElementById('password').removeAttribute('disabled');");
-          client.println("}");
-          client.println("};");
-
-
-
-
-
-
-          client.println("if (document.getElementById('dimmer').value === 'off') {");
-          client.println("document.getElementById('myRange').removeAttribute('disabled');");
-          client.println("} else {");
-          client.println("document.getElementById('myRange').setAttribute('disabled', 'disabled');");
-
-
-          client.println("}");
-          client.println("document.getElementById('dimmer').onchange = function () {");
-          client.println("document.getElementById('myRange').setAttribute('disabled', 'disabled');");
-          client.println("if (this.value == 'off') {");
-          client.println("document.getElementById('myRange').removeAttribute('disabled');");
-          client.println("}");
-          client.println("};");
-
-          client.println("var slider = document.getElementById('myRange');");
-          client.println("var output = document.getElementById('rangevalue');");
-          client.println("output.value = slider.value;");
-
-          client.println("slider.oninput = function() {");
-          client.println("  output.value = this.value;");
-          client.println("  slider.value = this.value;");
-          client.println("}");
-          client.print("var Loader = {");
-          client.print("loader: null,");
-          client.print("body: null,");
-          client.print("html: '<span><svg width=\\'40\\' height=\\'40\\' version=\\'1.1\\' xmlns=\\'http://www.w3.org/2000/svg\\'><circle cx=\\'20\\' cy=\\'20\\' r=\\'15\\'></svg></span>',");
-          client.print("cssClass: 'loader',");
-          client.print("check: function () {");
-          client.print("if (this.body == null) {");
-          client.print("this.body = document.getElementsByTagName('body')[0];");
-          client.print("}");
-          client.print("},");
-          client.print("open: function () {");
-          client.print("this.check();");
-          client.print("if (!this.isOpen()) {");
-          client.print("this.loader = document.createElement('div');");
-          client.print("this.loader.setAttribute('id', 'loader');");
-          client.print("this.loader.classList.add('loader_website');");
-          client.print("this.loader.innerHTML = this.html;");
-          client.print("this.body.appendChild(this.loader);");
-          client.print("setTimeout(function () {");
-          client.print("Loader.body.classList.add(Loader.cssClass);");
-          client.print("}, 1);");
-          client.print("}");
-          client.print("return this;");
-          client.print("},");
-          client.print("close: function () {");
-          client.print("this.check();");
-          client.print("if (this.isOpen()) {");
-          client.print("this.body.classList.remove(this.cssClass);");
-          client.print("setTimeout(function () {");
-          client.print("Loader.loader.remove();");
-          client.print("}, 100);");
-          client.print("}");
-          client.print("return this;");
-          client.print("},");
-          client.print("isOpen: function () {");
-          client.print("this.check();");
-          client.print("return this.body.classList.contains(this.cssClass);");
-          client.print("},");
-          client.print("ifOpened: function (callback, close) {");
-          client.print("this.check();");
-          client.print("if (this.isOpen()) {");
-          client.print("if (!!close)");
-          client.print("this.close();");
-          client.print("if (typeof callback === 'function') {");
-          client.print("callback();");
-          client.print("}");
-          client.print("}");
-          client.print("return this;");
-          client.print("},");
-          client.print("ifClosed: function (callback, open) {");
-          client.print("this.check();");
-          client.print("if (!this.isOpen()) {");
-          client.print("if (!!open)");
-          client.print("this.open();");
-          client.print("if (typeof callback === 'function') {");
-          client.print("callback();");
-          client.print("}");
-          client.print("}");
-          client.print("return this;");
-          client.print("}");
-          client.print("};");
-          client.println("function submit() {");
-          client.println("Loader.open();");
-          client.println("var FormValid = true;");
-          client.println("var data = [];");
-
-          client.println(" const container = document.querySelector('div.formcontent');");
-          client.println(" container.querySelectorAll('input').forEach(function (e) {");
-          client.println("  if (e.validity.valueMissing) {");
-          client.println("    FormValid = false;");
-          client.println(";  }");
-
-          client.println("  data[e.id] = e.value;");
-
-          client.println("});");
-          client.println("container.querySelectorAll('select').forEach(function (e) {");
-          client.println("data[e.id] = e.value;");
-
-          client.println("});");
-
-          client.println("if (document.getElementById('WifiTime').value === 'off') {");
-          client.println("data['ssid'] = 'Bi-naryClockSetup'");
-          client.println("data['password'] = 'Bi-naryClockSetup'");
-          client.println("}");
-          client.println("data['CurrentTime'] = Math.floor(Date.now() / 1000)");
-          client.println("encodeDataToURL = (data) => {");
-          client.println("return Object");
-          client.println(".keys(data)");
-          client.println(".map(value => `${value}=${encodeURIComponent(data[value])}`)");
-          client.println(".join('&');");
-          client.println("}");
-
-
-          client.println("var mypost = encodeDataToURL(data)");
-          client.println("mypost = mypost + '&Submit=Submit'");
-          // console.log(mypost);
-          client.println("if (FormValid) {");
-          client.println("var request = new XMLHttpRequest();");
-          client.println("request.open('GET', '/', true);");
-          client.println("request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');");
-          client.println("request.setRequestHeader('mydata','/?'+encodeDataToURL(data));");
-          client.println("request.onreadystatechange = function () {");
-          client.println("if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {");
-          client.println("console.log('succeed');");
-          client.print("Loader.close()");
-          // client.println("el.classList.add('hidden');");
-          //   myresponse.value = request.responseText;
-          client.println("} else {");
-          client.println("console.log('server error');");
-          client.print("Loader.close()");
-
-          client.println("}");
-          client.println("};");
-
-          client.println("request.onerror = function () {");
-          client.println("console.log('something went wrong');");
-          client.print("Loader.close()");
-          client.println("};");
-
-          client.println("request.send(mypost);");
-          client.println("}");
-          client.println("}");
-          client.println("</script>");
-          client.println("</BODY>");
-          client.println("</HTML>");
+          if (authentificated)
+            SendOKpage(client);
+          else
+            SendAuthentificationpage(client);
           break;
         }
         if (c == '\n') {
+
+          currentLineIsBlank = true;
+          if (strstr(linebuf, "Authorization: Basic") > 0 && strstr(linebuf, "YWRtaW46cGFzc3dvcmQ=") > 0) {
+            authentificated = true;
+          }
+          memset(linebuf, 0, sizeof(linebuf));
+          charcount = 0;
+
           //  Serial.println(readString);
           if (readString.indexOf("ssid") > 0) {
 
