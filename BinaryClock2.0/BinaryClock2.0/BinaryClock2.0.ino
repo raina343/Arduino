@@ -1307,7 +1307,7 @@ void loop() {
             debugoutput(1, 0, 0, 0, 150, 0, 150, 1);  //top row Purple.  Checking and valdiating settings
 
             char Buf[250];
-            readString.toCharArray(Buf, 150);
+            readString.toCharArray(Buf, 200);
             char *token = strtok(Buf, "/?");  // Get everything up to the /if(token) // If we got something
             unsigned long epoch;
             {
