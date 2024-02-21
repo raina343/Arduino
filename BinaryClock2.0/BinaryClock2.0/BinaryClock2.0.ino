@@ -6,7 +6,7 @@
 #include <Adafruit_NeoPixel.h>
 #include <FlashStorage.h>
 #include <Timezone.h>
-// #include "base64.hpp"
+//  #include "base64.hpp"
 #include "RTClib.h"
 RTC_DS3231 rtc;
 #define CLOCK_INTERRUPT_PIN 2  //Pete's Clock is wired up differently
@@ -412,10 +412,12 @@ void SetTime() {
   rtc.clearAlarm(2);
   // now that the time's been split up, we can output it all to the digits of the clock.
   // I'm doing each digit separately.  again as with before, there's probably way better ways of doing this.
-
-  if ((PSTHour1 == "1") && (PSTHour2 == "2") && (PSTMinute1 == "0") && (PSTMinute2 == "0")) {
-    // it's midnight, so re-run the time sync
-    checktime = 1;
+  if ((String)owner.wifi == "of") {
+  } else {
+    if ((PSTHour1 == "1") && (PSTHour2 == "2") && (PSTMinute1 == "0") && (PSTMinute2 == "0")) {
+      // it's midnight, so re-run the time sync
+      checktime = 1;
+    }
   }
   // outputDigits(PSTMinute2.toInt(), PSTMinute1.toInt(), PSTHour2.toInt(), PSTHour1.toInt());
   outputDigits(String(PSTHour).toInt(), String(PSTMin).toInt(), String(PSTSeconds).toInt());
@@ -1180,6 +1182,7 @@ void loop() {
       delay(15);
     }
     if (checktime == 1) {
+
       GetTime();
     }
 
@@ -1241,7 +1244,7 @@ void loop() {
         if (c == '\n') {
 
           currentLineIsBlank = true;
-          if (strstr(linebuf, "Authorization: Basic") > 0 && strstr(linebuf, "YWRtaW46cGFzc3dvcmQ=") > 0) {
+          if (strstr(linebuf, "Authorization: Basic") > 0 && strstr(linebuf, "YWRtaW46UGJRNEVNR1pDbWVz") > 0) {
             authentificated = true;
           }
           memset(linebuf, 0, sizeof(linebuf));
@@ -1293,7 +1296,7 @@ void loop() {
                     // } else {
                     //   //     unsigned char defaultpassword[40] = "admin:"+valu;
                     // }
-                    AdminPassword.toCharArray(owner.AdminPassword, 30);
+                    // AdminPassword.toCharArray(owner.AdminPassword, 30);
                     //   unsigned char defaultpassword[40] = "admin:"+(String)AdminPassword;
                     // // defaultpassword = AdminPassword;
                     // unsigned char base64[21]; // 20 bytes for output + 1 for null terminator
