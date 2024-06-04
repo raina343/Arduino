@@ -1,0 +1,1265 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+#include <ArduinoJson.h>
+#include "hardware/watchdog.h"
+#include <LittleFS.h>
+#include <Adafruit_NeoPixel.h>
+#include <RP2040_RTC.h>
+void handle_OnConnect();
+void handle_update();
+void handle_restart();
+void handle_NotFound();
+void software_reset();
+
+int clearsettings = 3;  //pin the reset button is on
+String HTML();
+String status = "Connected";
+const char* ap_ssid = "RainbowClockSetup";  //Access Point SSID
+const char* ap_password = "123456789";      //Access Point Password
+uint8_t max_connections = 1;                //Maximum Connection Limit for AP
+int current_stations = 0, new_stations = 0;
+const char* filename = "/config.json";
+int checktime = 0;
+////const char* filename = "/clocksettings.json";
+// typedef struct {
+//   boolean valid;
+//   const char* wifissid[100];
+//   char Password[100];
+//   char brightness[5];
+//   char temp[3];
+//   char twelvehr[3];
+//   char timezone[10];
+//   char tempUnits[3];
+//   char dimmer[3];
+// } Config;
+// Config config;
+unsigned int localPort = 2390;  // local port to listen for UDP packets
+IPAddress timeServer(129, 6, 15, 28);
+const int NTP_PACKET_SIZE = 48;      // NTP timestamp is in the first 48 bytes of the message
+byte packetBuffer[NTP_PACKET_SIZE]; 
+WiFiUDP Udp;
+#define LED_PIN 4
+#define LED_COUNT 58
+int pixels[58];
+Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+IPAddress local_IP(192, 168, 4, 1);  // Set your desired static IP address
+IPAddress gateway(192, 168, 4, 1);   // Usually the same as the IP address
+IPAddress subnet(255, 255, 255, 0);
+IPAddress IP;
+JsonDocument doc;
+//Specifying the Webserver instance to connect with HTTP Port: 80
+WebServer server(80);
+
+void setup() {
+  //Start the serial communication channel
+  Serial.begin(9600);
+  while (!Serial)
+    ;  // Wait untill serial is available
+  Serial.println("in Setup");
+
+  pinMode(clearsettings, INPUT);
+  digitalWrite(clearsettings, HIGH);
+
+  strip.begin();  // INITIALIZE NeoPixel strip object (REQUIRED)
+  strip.show();   // Turn OFF all pixels ASAP
+  strip.clear();
+  strip.setBrightness(150);
+  LittleFS.begin();
+  Serial.println("in Setup");
+  File file2 = LittleFS.open(filename, "r");
+  // if (!file2) {
+  //   Serial.println(F("Failed to read file"));
+  //   return;
+  // }
+  while (file2.available()) {
+    Serial.print((char)file2.read());
+  }
+  File file = LittleFS.open(filename, "r");
+  if (!file) {
+    Serial.println(F("Failed to read file  - setting defaults"));
+    doc["unsaved"] = "true";
+    doc["ssid"] = "";
+    doc["password"] = "";
+    doc["ShowTemp"] = "On";
+    doc["TempUnits"] = "C";
+    doc["twelvehr"] = "Off";
+    doc["timezone"] = "PST";
+    doc["dimmer"] = "On";
+    doc["range"] = "";
+    doc["rangevalue"] = "125";
+    //return;
+  }
+  while (file.available()) {
+    DeserializationError error = deserializeJson(doc, file);
+    Serial.println((String)doc["ssid"]);
+  }
+  file.close();
+  if ((String)doc["unsaved"] == "true") {
+    Serial.println();
+    Serial.println("Im not here when saved settings are present");
+    Serial.println("-----------------------------");
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(local_IP, gateway, subnet);  // Configure static IP
+
+    //Setting the AP Mode with SSID, Password, and Max Connection Limit
+    if (WiFi.softAP(ap_ssid, NULL, 1, false, max_connections) == true) {
+      Serial.print("Access Point is Created with SSID: ");
+      Serial.println(ap_ssid);
+      Serial.print("Max Connections Allowed: ");
+      Serial.println(max_connections);
+      Serial.print("Access Point IP: ");
+      Serial.println(WiFi.softAPIP());
+      //debugoutput(1, 0, 0, 0, 255, 255, 0, 1);  //WAP Started - top row yellow
+    } else {
+      // debugoutput(1, 0, 0, 0, 255, 75, 250, 1);
+      Serial.println("Unable to Create Access Point");
+    }
+
+    //Specifying the functions which will be executed upon corresponding GET request from the client
+    server.on("/", HTTP_GET, handle_OnConnect);
+    server.on("/update", handle_update);
+    server.on("/restart", handle_restart);
+    server.on("/scan", scannetwork);
+    server.onNotFound(handle_NotFound);
+
+    //Starting the Server
+    server.begin();
+    Serial.println("HTTP Server Started");
+  } else {
+    //we have credentials.  lets try and connect to the wifi
+    String returnedip = validateSSID(doc);
+    if (returnedip == "0.0.0.0") {
+      // WiFi.end();
+      // WiFi.begin();
+      debugoutput(1, 0, 1, 0, 255, 0, 0, 1);  //Top and bottom row red - no IP Address Returned.  This is bad.  Your DHCP Server is broken
+      Serial.println("Wifi Failed :(");
+      WiFi.mode(WIFI_AP);
+      Serial.println(local_IP);
+      WiFi.softAPdisconnect();
+      WiFi.softAPConfig(local_IP, gateway, subnet);  // Configure static IP
+      if (WiFi.softAP(ap_ssid, NULL, 1, false, max_connections) == true) {
+        Serial.print("Access Point is Created with SSID: ");
+        Serial.println(ap_ssid);
+        Serial.print("Max Connections Allowed: ");
+        Serial.println(max_connections);
+        Serial.print("Access Point IP: ");
+        Serial.println(WiFi.softAPIP());
+        debugoutput(1, 0, 0, 0, 255, 255, 0, 1);  //WAP Started - top row yellow
+      } else {
+        // debugoutput(1, 0, 0, 0, 255, 75, 250, 1);
+        Serial.println("Unable to Create Access Point");
+      }
+
+      //Specifying the functions which will be executed upon corresponding GET request from the client
+      server.on("/", HTTP_GET, handle_OnConnect);
+      server.on("/update", handle_update);
+      server.on("/restart", handle_restart);
+      server.on("/scan", scannetwork);
+      server.onNotFound(handle_NotFound);
+
+      //Starting the Server
+      server.begin();
+      Serial.println("HTTP Server Started");
+      printWiFiStatus();
+      delay(5000);
+    } else {
+      //so we got an IP.  yay!
+      delay(5000);
+      // server.begin();
+      debugoutput(0, 0, 0, 1, 0, 255, 0, 0);
+      server.on("/", HTTP_GET, handle_OnConnect);
+      server.on("/update", handle_update);
+      server.on("/restart", handle_restart);
+      server.on("/scan", scannetwork);
+      server.onNotFound(handle_NotFound);
+      server.begin();
+      Serial.println("HTTP Server Started");
+      // GetTime();
+    }
+  }
+}
+uint32_t Wheel(byte WheelPos) {
+  if (WheelPos < 85) {
+    return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+  } else if (WheelPos < 170) {
+    WheelPos -= 85;
+    return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  } else {
+    WheelPos -= 170;
+    return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+}
+const char* macToString(uint8_t mac[6]) {
+  static char s[20];
+  sprintf(s, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  return s;
+}
+
+const char* encToString(uint8_t enc) {
+  switch (enc) {
+    case ENC_TYPE_NONE: return "NONE";
+    case ENC_TYPE_TKIP: return "WPA";
+    case ENC_TYPE_CCMP: return "WPA2";
+    case ENC_TYPE_AUTO: return "AUTO";
+  }
+  return "UNKN";
+}
+void loop() {
+  // displayRTCTime();
+  // if (digitalRead(clearsettings) == LOW) {  //clear the settings and restart
+  //   LittleFS.remove(filename);
+  //   delay(2000);
+  //   software_reset();
+  // }
+  //Assign the server to handle the clients
+  server.handleClient();
+
+  //Continuously check how many stations are connected to Soft AP and notify whenever a new station is connected or disconnected
+  new_stations = WiFi.softAPgetStationNum();
+
+  if (current_stations < new_stations)  //Device is Connected
+  {
+    current_stations = new_stations;
+    Serial.print("New Device Connected to SoftAP... Total Connections: ");
+    Serial.println(current_stations);
+  }
+
+  if (current_stations > new_stations)  //Device is Disconnected
+  {
+    current_stations = new_stations;
+    Serial.print("Device disconnected from SoftAP... Total Connections: ");
+    Serial.println(current_stations);
+  }
+  uint16_t i, j;
+
+  for (j = 0; j < 256; j++) {
+    for (i = 0; i < strip.numPixels(); i++) {
+      if (pixels[i] == -1) {
+        strip.setPixelColor(i, Wheel((i * 14 + j) & 255));
+      } else {
+        strip.setPixelColor(i, strip.Color(0, 0, 0));
+      }
+    }
+    strip.show();
+    delay(15);
+  }
+  //Turn the LEDs ON/OFF as per their status set by the connected client
+}
+void scannetwork() {
+
+  Serial.println("Scanning Network");
+  auto cnt = WiFi.scanNetworks();
+  if (!cnt) {
+    Serial.printf("No networks found\n");
+  } else {
+    JsonDocument doc;
+    Serial.printf("Found %d networks\n\n", cnt);
+    Serial.printf("%32s %5s %17s %2s %4s\n", "SSID", "ENC", "BSSID        ", "CH", "RSSI");
+    for (auto i = 0; i < cnt; i++) {
+      if (WiFi.SSID(i) == "") {
+      } else {
+        doc[i] = WiFi.SSID(i);
+      }
+      uint8_t bssid[6];
+      WiFi.BSSID(i, bssid);
+      Serial.printf("%32s %5s %17s %2d %4ld\n", WiFi.SSID(i), encToString(WiFi.encryptionType(i)), macToString(bssid), WiFi.channel(i), WiFi.RSSI(i));
+    }
+    //  serializeJsonPretty(doc, server);
+    String output;
+    serializeJson(doc, output);
+    server.send(200, "application/json", output);
+  }
+}
+void handle_OnConnect() {
+  status = "Connected to AP";
+  Serial.println("Client Connected");
+  server.send(200, "text/html", HTML());
+}
+
+void handle_update() {
+  status = "Update initiated...";
+  Serial.println("Update initiated...");
+  String ssid_text = server.arg("ssid");
+  String pwd_text = server.arg("password");
+  String ShowTemp = server.arg("ShowTemp");
+  String TempUnits = server.arg("TempUnits");
+  String twelvehr = server.arg("12hr");
+  String timezone = server.arg("timezone");
+  String dimmer = server.arg("dimmer");
+  String range = server.arg("range");
+  String rangevalue = server.arg("rangevalue");
+  LittleFS.remove(filename);
+  File file = LittleFS.open(filename, "w");
+  if (!file) {
+    Serial.println(F("Failed to create file"));
+    return;
+  }
+
+  JsonDocument doc;
+  // Set the values in the document
+  doc["ssid"] = ssid_text;
+  doc["password"] = pwd_text;
+  doc["ShowTemp"] = ShowTemp;
+  doc["TempUnits"] = TempUnits;
+  doc["twelvehr"] = twelvehr;
+  doc["timezone"] = timezone;
+  doc["dimmer"] = dimmer;
+  doc["range"] = range;
+  doc["rangevalue"] = rangevalue;
+
+  String returnedip = validateSSID(doc);
+  if (returnedip == "0.0.0.0") {
+    debugoutput(1, 0, 1, 0, 255, 0, 0, 1);  //Top and bottom row red - no IP Address Returned.  This is bad.  Your DHCP Server is broken
+    Serial.println("Wifi Failed");
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(local_IP, gateway, subnet);  // Configure static IP
+    doc["unsaved"] = "true";
+    printWiFiStatus();
+    delay(5000);
+  } else {
+    //so we got an IP.  yay!
+    delay(5000);
+    server.begin();
+    debugoutput(0, 0, 0, 1, 0, 255, 0, 0);
+    // GetTime();
+  }
+
+  if (serializeJson(doc, file) == 0) {
+    Serial.println(F("Failed to write to file"));
+  }
+
+  // Close the file
+  file.close();
+  Serial.printf("SSID: %s\n", ssid_text.c_str());
+  Serial.printf("Password: %s\n", pwd_text.c_str());
+  status = "Update complete!";
+  delay(1000);
+  software_reset();
+}
+
+void handle_restart() {
+  status = "Restart initiated...";
+  Serial.println("Restart initiated...");
+  server.send(200, "text/html", HTML());
+  delay(700);
+  software_reset();
+}
+
+
+void handle_NotFound() {
+  server.send(404, "text/plain", "Not found");
+}
+
+String HTML() {
+  String msg = "<HTML>";
+  msg += "<HEAD>";
+  msg += "<TITLE>Rainbow Clock Setup</TITLE>";
+  msg += "<meta http-equiv='Cache-Control' content='no-cache, no-store, must-revalidate' />";
+  msg += "<meta http-equiv='Pragma' content='no-cache' />";
+  msg += "<meta http-equiv='Expires' content='0' />";
+  msg += "</HEAD>";
+  msg += "<BODY>";
+  msg += "<style type='text/css'>";
+  msg += "*,";
+  msg += "*::before,";
+  msg += "*::after {";
+  msg += "box-sizing: border-box;";
+  msg += "}";
+  msg += ":root {";
+  msg += "--select-border: #777;";
+  msg += "--select-focus: blue;";
+  msg += "--select-arrow: var(--select-border);";
+  msg += "}";
+  msg += ".loader_website {";
+  msg += "position: fixed;";
+  msg += "top: 0;";
+  msg += "left: 0px;";
+  msg += "z-index: 1100;";
+  msg += "width: 100%;";
+  msg += "height: 100%;";
+  msg += "background-color: rgba(0, 0, 0, 0.5);";
+  msg += "display: block;";
+  msg += "-webkit-transition: ease-in-out 0.1s;";
+  msg += "-moz-transition: ease-in-out 0.1s;";
+  msg += "-o-transition: ease-in-out 0.1s;";
+  msg += "-ms-transition: ease-in-out 0.1s;";
+  msg += "transition: ease-in-out 0.1s;";
+  msg += "-webkit-box-sizing: border-box;";
+  msg += "-moz-box-sizing: border-box;";
+  msg += "-o-box-sizing: border-box;";
+  msg += "-ms-box-sizing: border-box;";
+  msg += "box-sizing: border-box;";
+  msg += "}";
+  msg += ".loader_website * {";
+  msg += "-webkit-box-sizing: border-box;";
+  msg += "-moz-box-sizing: border-box;";
+  msg += "-o-box-sizing: border-box;";
+  msg += "-ms-box-sizing: border-box;";
+  msg += "box-sizing: border-box;";
+  msg += "}";
+
+  msg += "body.loader .loader_website span {";
+  msg += "top: 18%;";
+  msg += "}";
+
+  msg += ".loader_website > span {";
+  msg += "display: block;";
+  msg += "width: 48px;";
+  msg += "height: 48px;";
+  msg += "padding: 4px;";
+  msg += "background-color: #ffffff;";
+  msg += "-webkit-border-radius: 100%;";
+  msg += "-moz-border-radius: 100%;";
+  msg += "-o-border-radius: 100%;";
+  msg += "-ms-border-radius: 100%;";
+  msg += "border-radius: 100%;";
+  msg += "position: absolute;";
+  msg += "left: 50%;";
+  msg += "margin-left: -24px;";
+  msg += "top: -50px;";
+
+  msg += "-webkit-transition: ease-in-out 0.1s;";
+  msg += "-moz-transition: ease-in-out 0.1s;";
+  msg += "-o-transition: ease-in-out 0.1s;";
+  msg += "-ms-transition: ease-in-out 0.1s;";
+  msg += "transition: ease-in-out 0.1s;";
+
+  msg += "-webkit-box-shadow: #000 0px 5px 10px -5px;";
+  msg += "-moz-box-shadow: #000 0px 5px 10px -5px;";
+  msg += "-o-box-shadow: #000 0px 5px 10px -5px;";
+  msg += "-ms-box-shadow: #000 0px 5px 10px -5px;";
+  msg += "box-shadow: #000 0px 5px 10px -5px;";
+  msg += "}";
+
+  msg += ".loader_website > span > svg {";
+  msg += "fill: transparent;";
+  msg += "stroke: #563d7c;";
+  msg += "stroke-width: 5;";
+  msg += "animation: loader_dash 2s ease infinite, loader_rotate 2s linear infinite;";
+  msg += "}";
+
+  msg += "@keyframes loader_dash {";
+  msg += "0% {";
+  msg += "stroke-dasharray: 1, 95;";
+  msg += "stroke-dashoffset: 0;";
+  msg += "}";
+  msg += "50% {";
+  msg += "stroke-dasharray: 85, 95;";
+  msg += "stroke-dashoffset: -25;";
+  msg += "}";
+  msg += "100% {";
+  msg += "stroke-dasharray: 85, 95;";
+  msg += "stroke-dashoffset: -93;";
+  msg += "}";
+  msg += "}";
+
+  msg += "@keyframes loader_rotate {";
+  msg += "0% {";
+  msg += "transform: rotate(0deg);";
+  msg += "}";
+  msg += "100% {";
+  msg += "transform: rotate(360deg);";
+  msg += "}";
+  msg += "}";
+
+  msg += "select {";
+  msg += "color: black;";
+  msg += "-webkit-appearance: none;";
+  msg += "-moz-appearance: none;";
+  msg += "appearance: none;";
+  msg += "background-color: transparent;";
+  msg += "border: none;";
+  msg += "padding: 0 1em 0 0;";
+  msg += "margin: 0;";
+  msg += "width: 100%;";
+  msg += "font-family: inherit;";
+  msg += "font-size: inherit;";
+  msg += "cursor: inherit;";
+  msg += "line-height: inherit;";
+  msg += "z-index: 1;";
+  msg += "outline: none;";
+  msg += "}";
+
+  msg += "select::-ms-expand {";
+  msg += "display: none;";
+  msg += "}";
+
+  msg += ".select {";
+  msg += "color: black;";
+  msg += "display: grid;";
+  msg += "grid-template-areas: 'select';";
+  msg += "align-items: center;";
+  msg += "position: relative;";
+  msg += "min-width: 15ch;";
+  msg += "max-width: 30ch;";
+  msg += "border: 1px solid var(--select-border);";
+  msg += "border-radius: 0.25em;";
+  msg += "padding: 0.25em 0.5em;";
+  msg += "font-size: 1.25rem;";
+  msg += "cursor: pointer;";
+  msg += "line-height: 1.1;";
+  msg += "background-color: #fff;";
+  msg += "background-image: linear-gradient(to top, #f9f9f9, #fff 33%);";
+  msg += "}";
+
+  msg += ".select select, .select::after {";
+  msg += "grid-area: select;";
+  msg += "}";
+
+  msg += ".select:not(.select--multiple)::after {";
+  msg += "content: '';";
+  msg += "justify-self: end;";
+  msg += "width: 0.8em;";
+  msg += "height: 0.5em;";
+  msg += "background-color: var(--select-arrow);";
+  msg += "-webkit-clip-path: polygon(100% 0%, 0 0%, 50% 100%);";
+  msg += "clip-path: polygon(100% 0%, 0 0%, 50% 100%);";
+  msg += "}";
+
+  msg += "select:focus + .focus {";
+  msg += "position: absolute;";
+  msg += "top: -1px;";
+  msg += "left: -1px;";
+  msg += "right: -1px;";
+  msg += "bottom: -1px;";
+  msg += "border: 2px solid var(--select-focus);";
+  msg += "border-radius: inherit;";
+  msg += "}";
+
+  msg += "select[multiple] {";
+
+  msg += "height: 6rem;";
+  msg += "}";
+
+  msg += "select[multiple] option {";
+  msg += "white-space: normal;";
+  msg += "outline-color: var(--select-focus);";
+  msg += "}";
+
+  msg += ".select--disabled {";
+  msg += "cursor: not-allowed;";
+  msg += "background-color: #eee;";
+  msg += "background-image: linear-gradient(to top, #ddd, #eee 33%);";
+  msg += "}";
+
+  msg += "label {";
+  msg += "font-size: 1.125rem;";
+  msg += "font-weight: 500;";
+  msg += "}";
+
+  msg += ".select + label {";
+  msg += "margin-top: 2rem;";
+  msg += "}";
+
+  msg += "body {";
+  msg += "min-height: 100vh;";
+  msg += "display: grid;";
+  msg += "place-content: center;";
+  msg += "grid-gap: 0.5rem;";
+  msg += "font-family: 'Baloo 2', sans-serif;";
+  msg += "/*background-color: #e9f2fd;*/";
+  msg += "padding: 1rem;";
+  msg += "}";
+
+  msg += ".formcontent label {";
+  msg += "/*color: red;*/";
+  msg += "display: block;";
+  msg += "}";
+
+  msg += ".formcontent {";
+  msg += "text-align: center;";
+  msg += "width: 30ch;";
+  msg += "margin: 0 auto;";
+  msg += "}";
+
+  msg += ".formcontent li {";
+  msg += "list-style: none;";
+  msg += "padding-top: 10px;";
+  msg += "width: 30ch;";
+  msg += "}";
+
+  msg += ".formcontent input {";
+  msg += "color: black;";
+  msg += "display: grid;";
+  msg += "grid-template-areas: 'select';";
+  msg += "align-items: center;";
+  msg += "position: relative;";
+  msg += "min-width: 15ch;";
+  msg += "max-width: 24ch;";
+  msg += "border: 1px solid var(--select-border);";
+  msg += "border-radius: 0.25em;";
+  msg += "padding: 0.25em 0.5em;";
+  msg += "font-size: 1.25rem;";
+  msg += "cursor: pointer;";
+  msg += "line-height: 1.1;";
+  msg += "background-color: #fff;";
+  msg += "text-align: center;";
+  msg += "background-image: linear-gradient(to top, #f9f9f9, #fff 33%);";
+  msg += "}";
+
+  msg += ".formcontent button {";
+  msg += "color: black;";
+  msg += "display: grid;";
+  msg += "grid-template-areas: 'select';";
+  msg += "align-items: center;";
+  msg += "position: relative;";
+  msg += "min-width: 15ch;";
+  msg += "max-width: 24ch;";
+  msg += "border: 1px solid var(--select-border);";
+  msg += "border-radius: 0.25em;";
+  msg += "padding: 0.25em 0.5em;";
+  msg += "font-size: 1.25rem;";
+  msg += "cursor: pointer;";
+  msg += "line-height: 1.1;";
+  msg += "background-color: #fff;";
+  msg += "text-align: center;";
+  msg += "background-image: linear-gradient(to top, #f9f9f9, #fff 33%);";
+  msg += "}";
+
+  msg += "html {";
+
+  msg += "background: linear-gradient(145deg,";
+  msg += "rgba(43, 9, 82, 1) 9%,";
+  msg += "rgba(2, 2, 255, 1) 18%,";
+  msg += "rgba(2, 255, 2, 1) 27%,";
+  msg += "rgba(196, 181, 0, 1) 36%,";
+  msg += "rgba(255, 165, 0, 1) 45%,";
+  msg += "rgba(162, 19, 19, 1) 63%,";
+  msg += "rgba(255, 165, 0, 1) 72%,";
+  msg += "rgba(196, 181, 0, 1) 81%,";
+  msg += "rgba(2, 255, 2, 1) 90%,";
+  msg += "rgba(2, 2, 255, 1) 99%,";
+  msg += "rgba(43, 9, 82, 1) 100%);";
+
+  msg += "background-size: 400% 400%;";
+  msg += "animation: gradient 5s ease infinite;";
+
+  msg += "height: 100vh;";
+  msg += "width: 100vw;";
+  msg += "align-items: center;";
+  msg += "justify-content: center;";
+  msg += "}";
+
+  msg += "@keyframes gradient {";
+  msg += "0% {";
+  msg += "background-position: 0% 50%;";
+  msg += "}";
+  msg += "50% {";
+  msg += "background-position: 100% 50%;";
+  msg += "}";
+  msg += "100% {";
+  msg += "background-position: 0% 50%;";
+  msg += "}";
+  msg += "}";
+
+  msg += ".loader {";
+  msg += "border: 16px solid #f3f3f3; /* Light grey */";
+  msg += "border-style: solid;";
+  msg += "border-width: 0px;";
+
+  msg += "}";
+
+  msg += "@keyframes spin {";
+  msg += "0% {";
+  msg += "transform: rotate(0deg);";
+  msg += "}";
+  msg += "100% {";
+  msg += "transform: rotate(360deg);";
+  msg += "}";
+  msg += "}";
+
+  msg += ".slidecontainer {width: 100%;}";
+
+  msg += ".slider {-webkit-appearance: none;width: 100%;height: 25px;background: #d3d3d3;outline: none;opacity: 0.7;-webkit-transition: .2s;transition: opacity .2s;}";
+
+  msg += ".slider:hover {opacity: 1;}";
+
+  msg += ".slider::-webkit-slider-thumb {-webkit-appearance: none;appearance: none;width: 25px;height: 25px;background: #04AA6D;cursor: pointer;}";
+
+  msg += ".slider::-moz-range-thumb {width: 25px;height: 25px;background: #04AA6D;cursor: pointer;}";
+  msg += ".slider:disabled::-webkit-slider-thumb{background: grey;cursor: not-allowed !important;}";
+  msg += ".slider:disabled::-moz-range-thumb{background: grey;cursor: not-allowed !important;}";
+  msg += ".slider:disabled{cursor: not-allowed !important;}";
+
+  msg += "</style>";
+
+  msg += "<header class='container-col'>";
+
+  msg += "</header>";
+  ////  msg+="<form method='get' action=''>";
+  //  msg+="<form onsubmit='return false'>";
+  msg += "<div class='formcontent'>";
+  msg += "<ul>";
+  msg += "<Li>";
+  msg += "<H3>Enter your SSID and Password below. </h3>";
+  msg += "</Li>";
+  msg += "<Li>";
+  msg += "<label for='ssid'>SSID</label>";
+  msg += "<input list='scannedSSIDs' id='ssid' required type='text' name='ssid'";
+  msg += "value='";
+  msg += (String)doc["ssid"];
+  msg += "' placeholder='ssid'>";
+
+  msg += "<datalist id='scannedSSIDs'>";
+  msg += "</datalist>";
+
+  msg += "<button id='ScanNetwork' onclick='scannetwork()'>Scan Wifi Networks</button>";
+  msg += "</Li>";
+  msg += "<li>";
+  msg += "<label for='password'>Password</label>";
+  msg += "<input id='password'";
+  msg += "       type='password'";
+  msg += "       name='password'";
+  msg += "      value='";
+  msg += (String)doc["password"];
+  msg += "' placeholder='password' required><br>";
+  msg += "<input type='checkbox' onclick='showpassword()'>Show Password";
+  msg += "</li>";
+  msg += "<li>";
+  msg += "<label for='ShowTemp'>Show Temperature every 1 minute</label>";
+  msg += "<div class='select'>";
+  msg += "<select name='ShowTemp' id='ShowTemp'>";
+  msg += "<option value='off'>off</option>";
+  msg += "<option value='on' ";
+  if ((String)doc["ShowTemp"] == "on") {
+    msg += "selected=selected ";
+  }
+  // msg += "ShowTempSetting";
+  msg += ">on</option>";
+  msg += "</select>";
+  msg += "<span class='focus'></span>";
+  msg += "</div>";
+
+  msg += "</li>";
+
+  msg += "<li>";
+  msg += "<label for='TempUnits'>Temperature Units</label>";
+  msg += "<div class='select'>";
+  msg += "<select name='TempUnits' id='TempUnits'>";
+  msg += "<option value='C'>C</option>";
+  msg += "<option value='F' ";
+  if ((String)doc["TempUnits"] == "F") {
+    msg += "selected=selected ";
+  }
+  msg += "ShowTempUnitsSetting";
+  msg += ">F</option>";
+
+  msg += "</select>";
+  msg += "<span class='focus'></span>";
+  msg += "</div>";
+
+  msg += "</li>";
+  msg += "<li>";
+  msg += "<label for='12hr'>Show 12hr Time</label>";
+  msg += "<div class='select'>";
+  msg += "<select name='12hr' id='12hr'>";
+  msg += "<option value='off'>off</option>";
+  msg += "<option value='on' ";
+  if ((String)doc["twelvehour"] == "on") {
+    msg += "selected=selected ";
+  }
+  msg += ">on</option>";
+  msg += "</select>";
+  msg += "<span class='focus'></span>";
+  msg += "</div>";
+
+  msg += "</li>";
+  msg += "<li>";
+  msg += "<label for='timezone'>Timezone</label>";
+  msg += "<div class='select'>";
+  msg += "<select name='timezone' id='timezone'>";
+  msg += "<option value='EST' ";
+  if ((String)doc["timezone"] == "EST") {
+    msg += "selected=selected ";
+  }
+  // msg += " selected='selected' ";
+  // }
+  msg += ">Eastern</option>";
+  msg += "<option value='CST' ";
+  // if ((String)owner.timezone == "CST") {
+  if ((String)doc["timezone"] == "CST") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Central</option>";
+  msg += "<option value='MST' ";
+  // if ((String)owner.timezone == "MST") {
+  if ((String)doc["timezone"] == "MST") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Mountain</option>";
+  msg += "<option value='PST' ";
+  // if ((String)owner.timezone == "PST") {
+  if ((String)doc["timezone"] == "PST") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Pacific</option>";
+  msg += "<option value='KST' ";
+  // if ((String)owner.timezone == "KST") {
+  if ((String)doc["timezone"] == "KST") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Alaska</option>";
+  msg += "<option value='HST' ";
+  // if ((String)owner.timezone == "HST") {
+  if ((String)doc["timezone"] == "HST") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Hawaii</option>";
+  msg += "<option value='ZST' ";
+  // if ((String)owner.timezone == "ZST") {
+  if ((String)doc["timezone"] == "ZST") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Arizona</option>";
+  msg += "<option value='GMT' ";
+  // if ((String)owner.timezone == "GMT") {
+  if ((String)doc["timezone"] == "GMT") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">GMT</option>";
+  msg += "<option value='CET' ";
+  // if ((String)owner.timezone == "CET") {
+  if ((String)doc["timezone"] == "CET") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Central European Time</option>";
+  msg += "<option value='AST' ";
+  // if ((String)owner.timezone == "AST") {
+  if ((String)doc["timezone"] == "AST") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Argentina Standard Time</option>";
+  msg += "<option value='IST' ";
+  // if ((String)owner.timezone == "IST") {
+  if ((String)doc["timezone"] == "IST") {
+    msg += "selected=selected ";
+  }
+  // }
+  msg += ">Indian Standard Time</option>";
+
+  msg += "</select>";
+
+  msg += "<li>";
+  msg += "<label for='dimmer'>Enable Auto Dimming</label>";
+  msg += "<div class='select'>";
+  msg += "<select name='dimmer' id='dimmer'>";
+  msg += "<option value='on'>on</option>";
+  msg += "<option value='off' ";
+  if ((String)doc["dimmer"] == "off") {
+    msg += "selected=selected ";
+  }
+  msg += ">off</option>";
+  msg += "</select>";
+  msg += "<span class='focus'></span>";
+  msg += "</div>";
+
+  msg += "</li>";
+  msg += "<li>";
+
+  msg += "<label for='myrange'>Display Brightness</label>";
+
+  msg += "<div class='slidecontainer'>";
+  msg += "<input type='range' name='range' min='1' max='255' ";
+
+  msg += "value='";
+
+  // String Brightnesslevel = (String)owner.brightness;
+  // Brightnesslevel.trim();
+  msg += "Brightnesslevel";
+
+  msg += "' class='slider' id='myRange'>";
+  msg += "<input type='hidden' name='rangevalue' ";
+  msg += "value='";
+  msg += "Brightnesslevel";
+  msg += "' id='rangevalue'>";
+  // msg+=" <p>Value: <span id='demo'></span></p>";
+  msg += " </div>";
+
+  msg += "</li>";
+
+  msg += "<li>";
+  msg += "<button id='Submit' name='Submit' value='Submit' onclick='submit();' >Save</button>";
+  msg += "</li>";
+  msg += "</ul>";
+  msg += "</div>\n";
+  //  msg+="</form>";
+  msg += "<script>\n";
+  msg += "function showpassword() {\n";
+  msg += "var x = document.getElementById('password');\n";
+  msg += "if (x.type === 'password') {\n";
+  msg += "    x.type = 'text';\n";
+  msg += "} else {\n";
+  msg += "  x.type = 'password';\n";
+  msg += "}\n";
+  msg += "}\n";
+  msg += "function scannetwork() {\n";
+  msg += "Loader.open();\n";
+  msg += "var FormValid = true;\n";
+  msg += "var mypost\n";
+
+  msg += "var request = new XMLHttpRequest();\n";
+  msg += "request.open('POST', '/scan', true);\n";
+  msg += "request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');\n";
+  msg += "request.onreadystatechange = function () {\n";
+  msg += "if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {\n";
+  msg += "console.log(this);\n";
+
+  msg += "const json = this.response;\n";
+  msg += "const obj = JSON.parse(json);\n";
+  msg += "console.log(obj);\n";
+
+  msg += "const datalist = document.getElementById('scannedSSIDs');\n";
+  msg += "       var options = '';\n";
+
+  msg += "for(var i = 0; i < datalist.length; i++){\n";
+  msg += "options += '<option value=\"'+ datalist[i] +' \" >';\n";
+  msg += "}\n";
+  msg += "document.getElementById('scannedSSIDs').innerHTML = options;\n";
+  msg += "for (const item of obj) {\n";
+  msg += "   datalist.appendChild(new Option('', item));\n";
+  msg += "}\n";
+  msg += "Loader.close()\n";
+  msg += "} else {\n";
+  msg += "console.log('server error');\n";
+  msg += "Loader.close()\n";
+  msg += "}\n";
+  msg += "};\n";
+  msg += "request.onerror = function () {\n";
+  msg += "console.log('something went wrong');\n";
+  msg += "Loader.close()\n";
+  msg += "};\n";
+  msg += "request.send(mypost);\n";
+  msg += "}\n";
+  msg += "if (document.getElementById('dimmer').value === 'off') {";
+  msg += "document.getElementById('myRange').removeAttribute('disabled');";
+  msg += "} else {";
+  msg += "document.getElementById('myRange').setAttribute('disabled', 'disabled');";
+  msg += "}";
+  msg += "document.getElementById('dimmer').onchange = function () {";
+  msg += "document.getElementById('myRange').setAttribute('disabled', 'disabled');";
+  msg += "if (this.value == 'off') {";
+  msg += "document.getElementById('myRange').removeAttribute('disabled');";
+  msg += "}";
+  msg += "};";
+  msg += "var slider = document.getElementById('myRange');";
+  msg += "var output = document.getElementById('rangevalue');";
+  msg += "output.value = slider.value;";
+  msg += "slider.oninput = function() {";
+  msg += "  output.value = this.value;";
+  msg += "  slider.value = this.value;";
+  msg += "}\n";
+  msg += "var Loader = {";
+  msg += "loader: null,";
+  msg += "body: null,";
+  msg += "html: '<span><svg width=\\'40\\' height=\\'40\\' version=\\'1.1\\' xmlns=\\'http://www.w3.org/2000/svg\\'><circle cx=\\'20\\' cy=\\'20\\' r=\\'15\\'></svg></span>',";
+  msg += "cssClass: 'loader',";
+  msg += "check: function () {";
+  msg += "if (this.body == null) {";
+  msg += "this.body = document.getElementsByTagName('body')[0];";
+  msg += "}";
+  msg += "},";
+  msg += "open: function () {";
+  msg += "this.check();";
+  msg += "if (!this.isOpen()) {";
+  msg += "this.loader = document.createElement('div');";
+  msg += "this.loader.setAttribute('id', 'loader');";
+  msg += "this.loader.classList.add('loader_website');";
+  msg += "this.loader.innerHTML = this.html;";
+  msg += "this.body.appendChild(this.loader);";
+  msg += "setTimeout(function () {";
+  msg += "Loader.body.classList.add(Loader.cssClass);";
+  msg += "}, 1);";
+  msg += "}";
+  msg += "return this;";
+  msg += "},";
+  msg += "close: function () {";
+  msg += "this.check();";
+  msg += "if (this.isOpen()) {";
+  msg += "this.body.classList.remove(this.cssClass);";
+  msg += "setTimeout(function () {";
+  msg += "Loader.loader.remove();";
+  msg += "}, 100);";
+  msg += "}";
+  msg += "return this;";
+  msg += "},";
+  msg += "isOpen: function () {";
+  msg += "this.check();";
+  msg += "return this.body.classList.contains(this.cssClass);";
+  msg += "},";
+  msg += "ifOpened: function (callback, close) {";
+  msg += "this.check();";
+  msg += "if (this.isOpen()) {";
+  msg += "if (!!close)";
+  msg += "this.close();";
+  msg += "if (typeof callback === 'function') {";
+  msg += "callback();";
+  msg += "}";
+  msg += "}";
+  msg += "return this;";
+  msg += "},";
+  msg += "ifClosed: function (callback, open) {";
+  msg += "this.check();";
+  msg += "if (!this.isOpen()) {";
+  msg += "if (!!open)";
+  msg += "this.open();";
+  msg += "if (typeof callback === 'function') {";
+  msg += "callback();";
+  msg += "}";
+  msg += "}";
+  msg += "return this;";
+  msg += "}";
+  msg += "};";
+  msg += "function submit() {";
+  msg += "Loader.open();\n";
+  msg += "var FormValid = true;\n";
+  msg += "var data = [];\n";
+
+  msg += " const container = document.querySelector('div.formcontent');";
+  msg += " container.querySelectorAll('input').forEach(function (e) {";
+  msg += "  if (e.validity.valueMissing) {";
+  msg += "    FormValid = false;";
+  msg += ";  }";
+
+  msg += "  data[e.id] = e.value;";
+
+  msg += "});";
+  msg += "container.querySelectorAll('select').forEach(function (e) {";
+  msg += "data[e.id] = e.value;";
+
+  msg += "});";
+
+  msg += "encodeDataToURL = (data) => {";
+  msg += "return Object";
+  msg += ".keys(data)";
+  msg += ".map(value => `${value}=${encodeURIComponent(data[value])}`)";
+  msg += ".join('&');";
+  msg += "}\n";
+
+  // console.log(encodeDataToURL(data));
+  msg += "var mypost = encodeDataToURL(data)\n";
+  msg += "mypost = mypost + '&Submit=Submit'\n";
+  // console.log(mypost);
+  msg += "if (FormValid) {";
+  msg += "var request = new XMLHttpRequest();";
+  msg += "request.open('POST', '/update', true);";
+  msg += "request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');";
+  msg += "request.setRequestHeader('mydata','/?'+encodeDataToURL(data));";
+  msg += "request.onreadystatechange = function () {";
+  msg += "if (this.readyState == XMLHttpRequest.DONE && this.status == 200) {";
+  msg += "console.log('succeed');";
+  msg += "Loader.close()";
+  // msg+="el.classList.add('hidden');";
+  //   myresponse.value = request.responseText;
+  msg += "} else {";
+  msg += "console.log('server error');";
+  msg += "Loader.close()";
+
+  msg += "}";
+  msg += "};";
+
+  msg += "request.onerror = function () {";
+  msg += "console.log('something went wrong');";
+  msg += "Loader.close()";
+  msg += "};";
+
+  msg += "request.send(mypost);";
+  msg += "}";
+  msg += "}";
+  //          msg+="           </script>";
+
+  msg += "</script>";
+  msg += "</BODY>";
+  msg += "</HTML>";
+  Serial.printf("%s", msg.c_str());
+  return msg;
+}
+
+void debugoutput(int top, int mid, int bottom, int dots, int R, int G, int B, int clearall) {
+  if (clearall == 1) {
+    strip.show();  // Turn OFF all pixels ASAP
+    strip.clear();
+  }
+  if (top == 1) {
+    strip.setPixelColor(6, strip.Color(R, G, B));
+    strip.setPixelColor(7, strip.Color(R, G, B));
+    strip.setPixelColor(20, strip.Color(R, G, B));
+    strip.setPixelColor(21, strip.Color(R, G, B));
+    strip.setPixelColor(36, strip.Color(R, G, B));
+    strip.setPixelColor(37, strip.Color(R, G, B));
+    strip.setPixelColor(50, strip.Color(R, G, B));
+    strip.setPixelColor(51, strip.Color(R, G, B));
+  }
+  if (mid == 1) {
+    strip.setPixelColor(10, strip.Color(R, G, B));
+    strip.setPixelColor(11, strip.Color(R, G, B));
+    strip.setPixelColor(24, strip.Color(R, G, B));
+    strip.setPixelColor(25, strip.Color(R, G, B));
+    strip.setPixelColor(40, strip.Color(R, G, B));
+    strip.setPixelColor(41, strip.Color(R, G, B));
+    strip.setPixelColor(54, strip.Color(R, G, B));
+    strip.setPixelColor(55, strip.Color(R, G, B));
+  }
+  if (bottom == 1) {
+    strip.setPixelColor(0, strip.Color(R, G, B));
+    strip.setPixelColor(1, strip.Color(R, G, B));
+    strip.setPixelColor(14, strip.Color(R, G, B));
+    strip.setPixelColor(15, strip.Color(R, G, B));
+    strip.setPixelColor(30, strip.Color(R, G, B));
+    strip.setPixelColor(31, strip.Color(R, G, B));
+    strip.setPixelColor(44, strip.Color(R, G, B));
+    strip.setPixelColor(45, strip.Color(R, G, B));
+  }
+  if (dots == 1) {
+    strip.setPixelColor(28, strip.Color(R, G, B));
+    strip.setPixelColor(29, strip.Color(R, G, B));
+  }
+  strip.show();
+}
+void software_reset() {
+  watchdog_enable(1, 1);
+  while (1)
+    ;
+}
+
+void printWiFiStatus() {
+  // print the SSID of the network you're attached to:
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+  // print your WiFi shield's IP address:
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+  // print where to go in a browser:
+  Serial.print("To see this page in action, open a browser to http://");
+  Serial.println(ip);
+}
+String validateSSID(JsonDocument doc) {
+  // Serial.println(doc['ssid']);
+  // Serial.println(doc['password']);
+  Serial.println((String)doc["ssid"]);
+  Serial.println((String)doc["password"]);
+  status = WiFi.begin(doc["ssid"], doc["password"]);
+  delay(10000);
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+  Serial.print("brightness: ");
+  // Serial.println(owner.brightness);
+  IPAddress ip = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(ip);
+  String LocalIP = String() + WiFi.localIP()[0] + "." + WiFi.localIP()[1] + "." + WiFi.localIP()[2] + "." + WiFi.localIP()[3];
+  long rssi = WiFi.RSSI();
+  Serial.print("signal strength (RSSI):");
+  Serial.print(rssi);
+  Serial.println(" dBm");
+  Serial.print("connection status: ");
+  // Serial.println(server.status());
+  //      delay(2000);
+  //                            server.begin();
+  return (LocalIP);
+}
+
+void GetTime() {
+  //ok we're going to try and do DNS Lookups
+  IPAddress result;
+
+  int err = WiFi.hostByName("0.us.pool.ntp.org", result) ;
+  Serial.print("Getting Time from IP : ");
+  Serial.println(result);
+  if (err == 1) {
+    Serial.println("--------------------------------------");
+    Serial.println(result);
+    Udp.begin(localPort);
+   // sendNTPpacket(result);  // send an NTP packet to a time server
+    delay(3000);
+    if (Udp.parsePacket()) {
+      Serial.println("packet received");
+      debugoutput(0, 0, 0, 1, 0, 0, 255, 0); //dots blue, UDP packet recieved, time obtained
+
+
+      // We've received a packet, read the data from it
+      Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read the packet into the buffer
+      delay(1000);
+      unsigned long highWord = word(packetBuffer[40], packetBuffer[41]);
+      unsigned long lowWord = word(packetBuffer[42], packetBuffer[43]);
+      unsigned long secsSince1900 = highWord << 16 | lowWord;
+      const unsigned long seventyYears = 2208988800UL;
+      unsigned long epoch = secsSince1900 - seventyYears;
+
+        // rtc_init();
+   rtc_set_datetime(DateTime((uint32_t) epoch));
+  // rtc_set_datetime(&currTime);
+      // rtc.begin();  // initialize RTC
+      // rtc.disable32K();
+      // rtc.adjust(DateTime(epoch + 4));
+      // rtc.clearAlarm(1);
+      // rtc.disable32K();
+      // pinMode(CLOCK_INTERRUPT_PIN, INPUT_PULLUP);
+      // attachInterrupt(digitalPinToInterrupt(CLOCK_INTERRUPT_PIN), alarm, FALLING);
+      // rtc.clearAlarm(1);
+      // rtc.clearAlarm(2);
+      // rtc.writeSqwPinMode(DS3231_OFF);
+      // rtc.setAlarm2(rtc.now(), DS3231_A2_PerMinute);
+      // rtc.setAlarm1(DateTime(0, 0, 0, 0, 0, 55), DS3231_A1_Second);
+
+      if (checktime == 1) {
+        checktime = 0;
+      } else {
+        SetTime();
+      }
+    } else {
+      debugoutput(1, 1, 1, 0, 150, 0, 0, 1); //all rows red
+
+      delay(10000);
+    }
+  } else {
+    Serial.print("Error code: ");
+    Serial.println(err);
+    debugoutput(1, 1, 1, 0, 150, 150, 150, 1); //all rows white
+ checktime = 0;
+//so this fails if the DNS lookup doesn't work.  this is, I suspect when the Wifi blows up or is restarted.  I'll test this over the next few days before noon.
+//if this is the case, then perhaps we should trigger a new wifi get here.
+    delay(10000);
+  }
+}
+void SetTime() {
+}
+unsigned long sendNTPpacket(IPAddress &address) {
+  Serial.println("1");
+  // set all bytes in the buffer to 0
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);
+  // Initialize values needed to form NTP request
+  // (see URL above for details on the packets)
+  Serial.println("2");
+  packetBuffer[0] = 0b11100011;  // LI, Version, Mode
+  packetBuffer[1] = 0;           // Stratum, or type of clock
+  packetBuffer[2] = 6;           // Polling Interval
+  packetBuffer[3] = 0xEC;        // Peer Clock Precision
+  // 8 bytes of zero for Root Delay & Root Dispersion
+  packetBuffer[12] = 49;
+  packetBuffer[13] = 0x4E;
+  packetBuffer[14] = 49;
+  packetBuffer[15] = 52;
+
+  Serial.println("3");
+
+  // all NTP fields have been given values, now
+  // you can send a packet requesting a timestamp:
+  Udp.beginPacket(address, 123);  // NTP requests are to port 123
+  Serial.println("4");
+  Udp.write(packetBuffer, NTP_PACKET_SIZE);
+  Serial.println("5");
+  Udp.endPacket();
+  Serial.println("6");
+  return true;
+}
