@@ -12,6 +12,12 @@
 ## Table of Contents
 
 * [Changelog](#changelog)
+  * [Release v1.8.0](#release-v180)
+  * [Release v1.7.1](#release-v171)
+  * [Release v1.7.0](#release-v170)
+  * [Release v1.6.0](#release-v160)
+  * [Release v1.5.1](#release-v151)
+  * [Major Release v1.5.0](#major-release-v150)
   * [Release v1.4.1](#release-v141)
   * [Major Release v1.4.0](#major-release-v140)
   * [Major Release v1.3.0](#major-release-v130)
@@ -28,6 +34,44 @@
 
 
 ## Changelog
+
+### Release v1.8.0
+
+1. Add support to Realtek RTL8720DN, RTL8722DM and RTL8722CSM using [AmebaD core](https://github.com/ambiot/ambd_arduino) and [FlashStorage_RTL8720 library](https://github.com/khoih-prog/FlashStorage_RTL8720). RTL8720DN WiFi can use either 2.4GHz or 5GHz band.
+2. Restructure library
+3. Add and Update examples
+4. Update `Packages' Patches`
+
+### Release v1.7.1
+
+1. Optimize code
+
+### Release v1.7.0
+
+1. Use [WiFiMulti_Generic](https://github.com/khoih-prog/WiFiMulti_Generic) library to connect to the best of **multi-WiFi APs**, with **auto-checking / auto-reconnecting** features when WiFi connection is lost.
+2. Update `Packages' Patches`
+
+### Release v1.6.0
+
+1. Optimize code by passing by `reference` instead of `value`
+2. Optional `Board_Name` in Config Portal. Check [option to remove board name from web page #25](https://github.com/khoih-prog/WiFiManager_NINA_Lite/issues/25)
+3. Add optional `CONFIG_MODE_LED` to be `ON` when in Config Portal mode. Check [Knowing when configuration mode is on or off #26](https://github.com/khoih-prog/WiFiManager_NINA_Lite/issues/26)
+4. Add function `isConfigMode()` to signal system is in Config Portal mode.
+5. Update `Packages' Patches`
+
+### Release v1.5.1
+
+1. Update to be compatible with new `FlashStorage_SAMD`
+2. Use better `FlashStorage_STM32` or `FlashStorage_STM32F1` library for STM32
+3. Add support to generic SAMD21 boards : `__SAMD21E1xA__`, `__SAMD21G1xA__` and `__SAMD21J1xA__`
+4. Update `Packages' Patches`
+
+### Major Release v1.5.0
+
+1. Add support to RP2040-based boards, such as **NANO_RP2040_CONNECT**, using [**Earle Philhower's arduino-pico** core](https://github.com/earlephilhower/arduino-pico)
+2. Fix the blocking issue in loop(). Check [retries block the main loop #18](https://github.com/khoih-prog/WiFiManager_NINA_Lite/issues/18)
+3. Configurable `WIFI_RECON_INTERVAL`. Check [retries block the main loop #18](https://github.com/khoih-prog/WiFiManager_NINA_Lite/issues/18#issuecomment-1006197561)
+4. Update `Packages' Patches`
 
 ### Release v1.4.1
 

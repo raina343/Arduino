@@ -9,34 +9,8 @@
   Built by Khoi Hoang https://github.com/khoih-prog/WiFiManager_Generic_Lite
   Licensed under MIT license
   *****************************************************************************************************************************/
-/****************************************************************************************************************************
-  You have to modify file ./libraries/Adafruit_MQTT_Library/Adafruit_MQTT.cpp as follows to avoid dtostrf error, if exists
-   
-  #ifdef __cplusplus
-    extern "C" {
-  #endif
-  extern char* itoa(int value, char *string, int radix);
-  extern char* ltoa(long value, char *string, int radix);
-  extern char* utoa(unsigned value, char *string, int radix);
-  extern char* ultoa(unsigned long value, char *string, int radix);
-  #ifdef __cplusplus
-    } // extern "C"
-  #endif
-
-  //#if defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_ARCH_SAMD)
-  #if !( ESP32 || ESP8266 || defined(CORE_TEENSY) || defined(STM32F1) || defined(STM32F2) || defined(STM32F3) || defined(STM32F4) || defined(STM32F7) || \
-       ( defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED) ) || ARDUINO_ARCH_SEEED_SAMD || ( defined(SEEED_WIO_TERMINAL) || defined(SEEED_XIAO_M0) || \
-         defined(SEEED_FEMTO_M0) || defined(Wio_Lite_MG126) || defined(WIO_GPS_BOARD) || defined(SEEEDUINO_ZERO) || defined(SEEEDUINO_LORAWAN) || defined(WIO_LTE_CAT) || \
-         defined(SEEED_GROVE_UI_WIRELESS) ) ) 
-  static char *dtostrf(double val, signed char width, unsigned char prec, char *sout)
-  {
-    char fmt[20];
-    sprintf(fmt, "%%%d.%df", width, prec);
-    sprintf(sout, fmt, val);
-    return sout;
-  }
-  #endif
- *****************************************************************************************************************************/
+  
+//  You have to use forked and modified library https://github.com/khoih-prog/Adafruit_MQTT_Library
  
 #include "defines.h"
 #include "Credentials.h"
@@ -64,9 +38,14 @@ void heartBeatPrint()
   static int num = 1;
 
   if (WiFi.status() == WL_CONNECTED)
-    Serial.print("W");        // W means connected to WiFi
+    Serial.print("H");        // H means connected to WiFi
   else
-    Serial.print("N");        // N means not connected to WiFi
+  {
+    if (WiFiManager_Generic->isConfigMode())
+      Serial.print("C");        // C means in Config Mode
+    else
+      Serial.print("F");        // F means not connected to WiFi  
+  }
 
   if (num == 40)
   {
@@ -294,7 +273,7 @@ void setup()
 {
   // Debug console
   Serial.begin(115200);
-  while (!Serial);
+  while (!Serial && millis() < 5000);
 
   pinMode(LED_PIN, OUTPUT);
 
@@ -302,6 +281,11 @@ void setup()
 
   Serial.print(F("\nStart MKR1000_WiFi101_MQTT on ")); Serial.print(BOARD_NAME);
   Serial.print(F(" with ")); Serial.println(SHIELD_TYPE);
+
+#if (USE_WIFI_NINA || USE_WIFI101)  
+  Serial.println(WIFIMULTI_GENERIC_VERSION);
+#endif
+  
   Serial.println(WIFI_MANAGER_GENERIC_LITE_VERSION);
 
   WiFiManager_Generic = new WiFiManager_Generic_Lite();

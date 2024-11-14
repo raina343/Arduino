@@ -455,7 +455,6 @@ void outputDigitsTemp(int Temperature, String units) {
     if (units=="A"){
       Temperature = Temperature-15;
     }else{
-//      TempUnits = "C";
     }
     temp1 = String(Temperature).substring(0, 1);
     temp2 = String(Temperature).substring(1, 2);
@@ -1546,6 +1545,7 @@ unsigned long sendNTPpacket(IPAddress &address) {
   Serial.println("5");
   Udp.endPacket();
   Serial.println("6");
+  return true;
 }
 
 void printWifiStatus() {

@@ -2,7 +2,14 @@
 #define __INC_CLOCKLESS_ARM_RP2040
 
 #include "hardware/structs/sio.h"
+
+#pragma GCC push_options
+// Attempt to fix https://github.com/FastLED/FastLED/issues/1629
+#pragma GCC optimize ("Os")
+
+#if FASTLED_RP2040_CLOCKLESS_M0_FALLBACK || !FASTLED_RP2040_CLOCKLESS_PIO
 #include "../common/m0clockless.h"
+#endif
 
 #if FASTLED_RP2040_CLOCKLESS_PIO
 #include "hardware/clocks.h"
@@ -141,9 +148,14 @@ public:
         int sm;
         int offset = -1;
         
+	#if defined(PICO_RP2040)
         // find an unclaimed PIO state machine and upload the clockless program if possible
         // there's two PIO instances, each with four state machines, so this should usually work out fine
-        const PIO pios[NUM_PIOS] = { pio0, pio1 };
+		const PIO pios[NUM_PIOS] = { pio0, pio1 };
+	#elif defined(PICO_RP2350)
+		// RP2350 features three PIO instances!
+		const PIO pios[NUM_PIOS] = { pio0, pio1, pio2 };
+	#endif
         // iterate over PIO instances
         for (unsigned int i = 0; i < NUM_PIOS; i++) {
             pio = pios[i];
@@ -221,7 +233,9 @@ public:
     virtual void showPixels(PixelController<RGB_ORDER> & pixels) {
 #if FASTLED_RP2040_CLOCKLESS_PIO
         if (dma_channel == -1) { // setup failed, so fall back to a blocking implementation
+#if FASTLED_RP2040_CLOCKLESS_M0_FALLBACK
             showRGBBlocking(pixels);
+#endif
             return;
         }
         
@@ -292,6 +306,7 @@ public:
     }
 #endif // FASTLED_RP2040_CLOCKLESS_PIO
     
+#if FASTLED_RP2040_CLOCKLESS_M0_FALLBACK
     void showRGBBlocking(PixelController<RGB_ORDER> pixels) {
         struct M0ClocklessData data;
         data.d[0] = pixels.d[0];
@@ -314,10 +329,12 @@ public:
         showLedData<portSetOff, portClrOff, T1, T2, T3, RGB_ORDER, WAIT_TIME>(portBase, pin::mask(), pixels.mData, pixels.mLen, &data);
         sei();
     }
+#endif
 
 };
 
 FASTLED_NAMESPACE_END
 
+#pragma GCC pop_options
 
 #endif // __INC_CLOCKLESS_ARM_RP2040
