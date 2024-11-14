@@ -1,11 +1,11 @@
 /*-------------------------------------------------------------------------
 NeoMethods includes all the classes that describe pulse/data sending methods using
-bitbang, SPI, or other platform specific hardware peripheral support.  
+bitbang, SPI, or other platform specific hardware peripherl support.  
 
 Written by Michael C. Miller.
 
 I invest time and resources providing this open source code,
-please support me by donating (see https://github.com/Makuna/NeoPixelBus)
+please support me by dontating (see https://github.com/Makuna/NeoPixelBus)
 
 -------------------------------------------------------------------------
 This file is part of the Makuna/NeoPixelBus library.
@@ -25,9 +25,6 @@ License along with NeoPixel.  If not, see
 <http://www.gnu.org/licenses/>.
 -------------------------------------------------------------------------*/
 #pragma once
-
-// helper constants for method speeds and invert
-#include "methods/NeoBits.h"
 
 // Generic Two Wire (clk and data) methods
 //
@@ -62,7 +59,6 @@ License along with NeoPixel.  If not, see
 #include "methods/NeoEsp32RmtMethod.h"
 #include "methods/DotStarEsp32DmaSpiMethod.h"
 #include "methods/NeoEsp32I2sXMethod.h"
-#include "methods/NeoEsp32LcdXMethod.h"
 
 
 #endif

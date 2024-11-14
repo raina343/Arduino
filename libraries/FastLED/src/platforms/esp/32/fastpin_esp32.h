@@ -1,10 +1,6 @@
 #pragma once
 
-
-
 FASTLED_NAMESPACE_BEGIN
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wvolatile"
 
 template<uint8_t PIN, uint32_t MASK, bool VALIDPIN> class _ESPPIN {
 public:
@@ -160,7 +156,4 @@ _FL_DEFPIN(60); _FL_DEFPIN(61); _FL_DEFPIN(62); _FL_DEFPIN(63);
 
 #define HAS_HARDWARE_PIN_SUPPORT
 
-#pragma GCC diagnostic pop
-
 FASTLED_NAMESPACE_END
-

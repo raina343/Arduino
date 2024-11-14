@@ -112,13 +112,10 @@ public:
 	static void wait() __attribute__((always_inline)) { }
 	static void waitFully() __attribute__((always_inline)) { wait(); }
 
-	void writeByteNoWait(uint8_t b) __attribute__((always_inline)) { writeByte(b); }
-	void writeBytePostWait(uint8_t b) __attribute__((always_inline)) { writeByte(b); wait(); }
+	static void writeByteNoWait(uint8_t b) __attribute__((always_inline)) { writeByte(b); }
+	static void writeBytePostWait(uint8_t b) __attribute__((always_inline)) { writeByte(b); wait(); }
 
-	void writeWord(uint16_t w) __attribute__((always_inline)) {
-		writeByte(static_cast<uint8_t>(w>>8));
-		writeByte(static_cast<uint8_t>(w&0xFF));
-	}
+	static void writeWord(uint16_t w) __attribute__((always_inline)) { writeByte(w>>8); writeByte(w&0xFF); }
 
 	// naive writeByte implelentation, simply calls writeBit on the 8 bits in the byte.
 	void writeByte(uint8_t b) {
@@ -161,7 +158,7 @@ public:
 		while(data != end) {
 			writeByte(D::adjust(*data++));
 		}
-		D::postBlock(len, &m_ledSPI);
+		D::postBlock(len);
 		release();
 	}
 
@@ -176,7 +173,7 @@ public:
 	// write a block of uint8_ts out in groups of three.  len is the total number of uint8_ts to write out.  The template
 	// parameters indicate how many uint8_ts to skip at the beginning of each grouping, as well as a class specifying a per
 	// byte of data modification to be made.  (See DATA_NOP above)
-	template <uint8_t FLAGS, class D, EOrder RGB_ORDER>  __attribute__((noinline)) void writePixels(PixelController<RGB_ORDER> pixels, void* context) {
+	template <uint8_t FLAGS, class D, EOrder RGB_ORDER>  __attribute__((noinline)) void writePixels(PixelController<RGB_ORDER> pixels) {
 		select();
 		int len = pixels.mLen;
 		while(pixels.has(1)) {
@@ -189,7 +186,7 @@ public:
 			pixels.advanceData();
 			pixels.stepDithering();
 		}
-		D::postBlock(len, context);
+		D::postBlock(len);
 		release();
 	}
 };

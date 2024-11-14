@@ -18,7 +18,6 @@
 #define WIFI_GENERIC_DEBUG_OUTPUT     Serial
 
 #define _WIFI_GENERIC_LOGLEVEL_       1
-#define _WIFIMULTI_LOGLEVEL_          1
 
 #define DRD_GENERIC_DEBUG             true
 
@@ -207,19 +206,7 @@
 
 // Permit input only one set of WiFi SSID/PWD. The other can be "NULL or "blank"
 // Default is false (if not defined) => must input 2 sets of SSID/PWD
-#define REQUIRE_ONE_SET_SSID_PW             true    //false
-
-// Max times to try WiFi per loop() iteration. To avoid blocking issue in loop()
-// Default 1 if not defined, and minimum 1.
-//#define MAX_NUM_WIFI_RECON_TRIES_PER_LOOP     2
-
-// Default no interval between recon WiFi if lost
-// Max permitted interval will be 10mins
-// Uncomment to use. Be careful, WiFi reconnect will be delayed if using this method
-// Only use whenever urgent tasks in loop() can't be delayed. But if so, it's better you have to rewrite your code, e.g. using higher priority tasks.
-//#define WIFI_RECON_INTERVAL                   30000
-
-/////////////////////////////////////////////
+#define REQUIRE_ONE_SET_SSID_PW       false
 
 #define USE_DYNAMIC_PARAMETERS        true
 
@@ -249,29 +236,7 @@
 
 /////////////////////////////////////////////
 
-// Optional, to use Board Name in Menu
-#define USING_BOARD_NAME                    true
-
-/////////////////////////////////////////////
-
-// Optional, to use Board Name in Menu
-#define USING_CONFIG_MODE_LED               true
-
-#if USING_CONFIG_MODE_LED
-  #if defined(LED_BUILTIN)
-    #define CONFIG_MODE_LED     LED_BUILTIN
-  #else
-    // Using default pin 13 for CONFIG_MODE_LED. To be changed as necessary
-    #define CONFIG_MODE_LED     13
-  #endif
-
-  #define LED_ON      HIGH
-  #define LED_OFF     LOW
-#endif
-
-/////////////////////////////////////////////
-
-#include <WiFiManager_Generic_Lite.h>
+#include <WiFiManager_Generic_Lite_STM32.h>
 
 #define HOST_NAME   "STM32-MQTT-Controller"
 

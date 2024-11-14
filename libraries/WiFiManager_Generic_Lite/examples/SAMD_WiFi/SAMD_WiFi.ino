@@ -14,21 +14,14 @@
 #include "Credentials.h"
 #include "dynamicParams.h"
 
-WiFiManager_Generic_Lite* WiFiManager_Generic;
-
 void heartBeatPrint(void)
 {
   static int num = 1;
 
   if (WiFi.status() == WL_CONNECTED)
-    Serial.print("H");        // H means connected to WiFi
+    Serial.print(F("H"));        // H means connected to WiFi
   else
-  {
-    if (WiFiManager_Generic->isConfigMode())
-      Serial.print("C");        // C means in Config Mode
-    else
-      Serial.print("F");        // F means not connected to WiFi  
-  }
+    Serial.print(F("F"));        // F means not connected to WiFi
 
   if (num == 80)
   {
@@ -55,6 +48,8 @@ void check_status()
   }
 }
 
+WiFiManager_Generic_Lite* WiFiManager_Generic;
+
 #if USING_CUSTOMS_STYLE
 const char NewCustomsStyle[] /*PROGMEM*/ = "<style>div,input{padding:5px;font-size:1em;}input{width:95%;}body{text-align: center;}\
 button{background-color:blue;color:white;line-height:2.4rem;font-size:1.2rem;width:100%;}fieldset{border-radius:0.3rem;margin:0px;}</style>";
@@ -64,17 +59,12 @@ void setup()
 {
   // Debug console
   Serial.begin(115200);
-  while (!Serial && millis() < 5000);
+  while (!Serial);
 
   delay(200);
 
   Serial.print(F("\nStart SAMD_WiFi on ")); Serial.print(BOARD_NAME);
   Serial.print(F(" with ")); Serial.println(SHIELD_TYPE);
-
-#if (USE_WIFI_NINA || USE_WIFI101)  
-  Serial.println(WIFIMULTI_GENERIC_VERSION);
-#endif
-  
   Serial.println(WIFI_MANAGER_GENERIC_LITE_VERSION);
 
 #if ( USE_WIFI_CUSTOM && USE_ESP_AT_SHIELD )

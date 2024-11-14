@@ -2,4 +2,5 @@
 
 # cd to the directory of the script
 cd "$(dirname "$0")"
-uv run ci-compile.py "$@"
+
+python ci-compile.py

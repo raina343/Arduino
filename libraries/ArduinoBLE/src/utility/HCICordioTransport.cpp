@@ -17,7 +17,8 @@
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#if defined(ARDUINO_ARCH_MBED) && !defined(TARGET_NANO_RP2040_CONNECT) // && !defined(CORE_CM4)
+#if defined(ARDUINO_ARCH_MBED) && !defined(TARGET_NANO_RP2040_CONNECT)
+
 #include <Arduino.h>
 #include <mbed.h>
 
@@ -51,8 +52,6 @@
 #else
 #define BLE_NAMESPACE ble::vendor::cordio
 #endif
-
-#include "CordioHCICustomDriver.h"
 
 extern BLE_NAMESPACE::CordioHCIDriver& ble_cordio_get_hci_driver();
 
@@ -182,7 +181,7 @@ HCICordioTransportClass::~HCICordioTransportClass()
 {
 }
 
-#if (defined(ARDUINO_PORTENTA_H7_M4) || defined(ARDUINO_PORTENTA_H7_M7) || defined(ARDUINO_NICLA_VISION) || defined(ARDUINO_GIGA) || defined(ARDUINO_OPTA)) && !defined(CUSTOM_HCI_DRIVER)
+#if defined(ARDUINO_PORTENTA_H7_M4) || defined(ARDUINO_PORTENTA_H7_M7) || defined(ARDUINO_NICLA_VISION) || defined(ARDUINO_GIGA) || defined(ARDUINO_OPTA)
 events::EventQueue eventQueue(10 * EVENTS_EVENT_SIZE);
 void scheduleMbedBleEvents(BLE::OnEventsToProcessCallbackContext *context) {
   eventQueue.call(mbed::Callback<void()>(&context->ble, &BLE::processEvents));
@@ -202,8 +201,7 @@ int HCICordioTransportClass::begin()
   init_wsf(bufPoolDesc);
 #endif
 
-#if (defined(ARDUINO_PORTENTA_H7_M4) || defined(ARDUINO_PORTENTA_H7_M7) || defined(ARDUINO_NICLA_VISION) || defined(ARDUINO_GIGA) || defined(ARDUINO_OPTA)) && !defined(CUSTOM_HCI_DRIVER)
-
+#if defined(ARDUINO_PORTENTA_H7_M4) || defined(ARDUINO_PORTENTA_H7_M7) || defined(ARDUINO_NICLA_VISION) || defined(ARDUINO_GIGA) || defined(ARDUINO_OPTA)
   BLE &ble = BLE::Instance();
   ble.onEventsToProcess(scheduleMbedBleEvents);
 

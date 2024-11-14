@@ -1,8 +1,6 @@
 #ifndef __LED_SYSDEFS_ARM_NRF52
 #define __LED_SYSDEFS_ARM_NRF52
 
-#include "force_inline.h"
-
 #define FASTLED_ARM
 
 #ifndef F_CPU
@@ -31,9 +29,9 @@
 #define FASTLED_NRF52_ENABLE_PWM_INSTANCE0
 
 #if defined(FASTLED_NRF52_NEVER_INLINE)
-    #define FASTLED_NRF52_INLINE_ATTRIBUTE FASTLED_FORCE_INLINE
+    #define FASTLED_NRF52_INLINE_ATTRIBUTE __attribute__((always_inline)) inline
 #else     
-    #define FASTLED_NRF52_INLINE_ATTRIBUTE FASTLED_FORCE_INLINE
+    #define FASTLED_NRF52_INLINE_ATTRIBUTE __attribute__((always_inline)) inline
 #endif    
 
 

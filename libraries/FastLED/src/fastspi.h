@@ -71,12 +71,6 @@ template<uint8_t _DATA_PIN, uint8_t _CLOCK_PIN, uint32_t _SPI_CLOCK_DIVIDER>
 class SPIOutput : public ESP8266SPIOutput<_DATA_PIN, _CLOCK_PIN, _SPI_CLOCK_DIVIDER> {};
 #endif
 
-#if defined(FASTLED_STUB_IMPL)
-template<uint8_t _DATA_PIN, uint8_t _CLOCK_PIN, uint32_t _SPI_CLOCK_DIVIDER>
-class SPIOutput : public StubSPIOutput {};
-#endif
-
-
 #if defined(SPI_DATA) && defined(SPI_CLOCK)
 
 #if defined(FASTLED_TEENSY3) && defined(ARM_HARDWARE_SPI)
@@ -158,7 +152,7 @@ class SPIOutput<SPI_DATA, SPI_CLOCK, SPI_SPEED> : public ArdunioCoreSPIOutput<SP
 #endif
 
 #else
-#  if !defined(FASTLED_INTERNAL) && !defined(FASTLED_ALL_PINS_HARDWARE_SPI) && !defined(ESP32)
+#  if !defined(FASTLED_INTERNAL) && !defined(FASTLED_ALL_PINS_HARDWARE_SPI)
 #    ifdef FASTLED_HAS_PRAGMA_MESSAGE
 #      pragma message "No hardware SPI pins defined.  All SPI access will default to bitbanged output"
 #    else

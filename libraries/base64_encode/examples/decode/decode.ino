@@ -1,6 +1,6 @@
 #include "arduino_base64.hpp"
 
-void setup() {
+void setup(){
     Serial.begin(115200);
     while(!Serial);
 
@@ -11,6 +11,4 @@ void setup() {
     Serial.println((const char*)output);
 }
 
-void loop() {
-    // nop
-}
+void loop(){}

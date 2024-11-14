@@ -8,33 +8,31 @@
 
   Built by Khoi Hoang https://github.com/khoih-prog/WiFiManager_Generic_Lite
   Licensed under MIT license
-  
-  Version: 1.8.0
+  Version: 1.4.1
 
   Version Modified By   Date        Comments
   ------- -----------  ----------   -----------
   1.0.0   K Hoang      04/02/2021  Initial coding for generic boards using generic WiFi.
-  ....
-  1.5.0   K Hoang      07/01/2022  Configurable WIFI_RECON_INTERVAL. Add support to RP2040 using arduino-pico core
-  1.5.1   K Hoang      26/01/2022  Update to be compatible with new FlashStorage libraries. Add support to more RTL8720/STM32 boards
-  1.6.0   K Hoang      26/01/2022  Optional Board_Name in Menu. Optimize code by using passing by reference
-                                   Add optional CONFIG_MODE_LED. Add function isConfigMode()
-  1.7.0   K Hoang      27/04/2022  Use WiFiMulti_Generic library for auto-checking / auto-reconnecting MultiWiFi
-  1.7.1   K Hoang      27/04/2022  Optimize code
-  1.8.0   K Hoang      18/05/2022  Add support to Ameba Realtek RTL8720DN, RTL8722DM and RTL8722CSM
+  1.0.1   K Hoang      05/02/2021  Fix bug. Drop Mega support due to marginal memory. 
+  1.0.2   K Hoang      06/02/2021  Add support to STM32F/L/H/G/WB/MP1 using ATWINC1500/WiFi101
+  1.1.0   K Hoang      21/02/2021  Optimize code and use better FlashStorage_SAMD and FlashStorage_STM32. 
+                                   Add customs HTML header feature. Fix bug.
+  1.1.2   K Hoang      30/03/2021  Fix MultiWiFi connection bug.
+  1.1.3   K Hoang      12/04/2021  Fix invalid "blank" Config Data treated as Valid.
+  1.2.0   K Hoang      14/04/2021  Optional one set of WiFi Credentials. Enforce WiFi PWD minimum 8 chars  
+  1.3.0   Michael H    24/04/2021  Enable scan of WiFi networks for selection in Configuration Portal
+  1.4.0   K Hoang      29/05/2021  Add support to Nano_RP2040_Connect, RASPBERRY_PI_PICO using Arduino mbed or Arduino-pico core
+  1.4.1   K Hoang      12/10/2021 Update `platform.ini` and `library.json`
  ********************************************************************************************************************************/
 
 #ifndef WiFiManager_Generic_Lite_SAMD_h
 #define WiFiManager_Generic_Lite_SAMD_h
 
-#if  ( defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_SAMD_MKRWIFI1010) \
-    || defined(ARDUINO_SAMD_NANO_33_IOT) || defined(ARDUINO_SAMD_MKRFox1200) || defined(ARDUINO_SAMD_MKRWAN1300) || defined(ARDUINO_SAMD_MKRWAN1310) \
-    || defined(ARDUINO_SAMD_MKRGSM1400) || defined(ARDUINO_SAMD_MKRNB1500) || defined(ARDUINO_SAMD_MKRVIDOR4000) \
-    || defined(ARDUINO_SAMD_CIRCUITPLAYGROUND_EXPRESS) || defined(__SAMD51__) || defined(__SAMD51J20A__) \
-    || defined(__SAMD51J19A__) || defined(__SAMD51G19A__) || defined(__SAMD51P19A__)  \
-    || defined(__SAMD21E15A__) || defined(__SAMD21E16A__) || defined(__SAMD21E17A__) || defined(__SAMD21E18A__) \
-    || defined(__SAMD21G15A__) || defined(__SAMD21G16A__) || defined(__SAMD21G17A__) || defined(__SAMD21G18A__) \
-    || defined(__SAMD21J15A__) || defined(__SAMD21J16A__) || defined(__SAMD21J17A__) || defined(__SAMD21J18A__) )
+#if    ( defined(ARDUINO_SAMD_ZERO) || defined(ARDUINO_SAMD_MKR1000) || defined(ARDUINO_SAMD_MKRWIFI1010) \
+      || defined(ARDUINO_SAMD_NANO_33_IOT) || defined(ARDUINO_SAMD_MKRFox1200) || defined(ARDUINO_SAMD_MKRWAN1300) || defined(ARDUINO_SAMD_MKRWAN1310) \
+      || defined(ARDUINO_SAMD_MKRGSM1400) || defined(ARDUINO_SAMD_MKRNB1500) || defined(ARDUINO_SAMD_MKRVIDOR4000) || defined(__SAMD21G18A__) \
+      || defined(ARDUINO_SAMD_CIRCUITPLAYGROUND_EXPRESS) || defined(__SAMD21E18A__) || defined(__SAMD51__) || defined(__SAMD51J20A__) || defined(__SAMD51J19A__) \
+      || defined(__SAMD51G19A__) || defined(__SAMD51P19A__) || defined(__SAMD21G18A__) )
   #if defined(WIFI_GENERIC_USE_SAMD)
     #undef WIFI_GENERIC_USE_SAMD
   #endif
@@ -43,17 +41,17 @@
   #error This code is intended to run on the SAMD platform! Please check your Tools->Board setting.  
 #endif
 
-#if (USE_WIFI_NINA || USE_WIFI101)
-  #include <WiFiMulti_Generic.h>
-  #include <WiFiWebServer.h>
+#define WIFI_MANAGER_GENERIC_LITE_VERSION        "WiFiManager_Generic_Lite v1.4.1"
 
-  WiFiMulti_Generic wifiMulti;
+#if (USE_WIFI_NINA || USE_WIFI101)
+  #include <WiFiWebServer.h>
 #else
   #warning You have to include another WiFiWebServer, such as ESP8266_AT_WebServer.
 #endif
 
 // Include EEPROM-like API for FlashStorage
-#include <FlashStorage_SAMD.h>                //https://github.com/khoih-prog/FlashStorage_SAMD
+//#include <FlashAsEEPROM.h>                //https://github.com/cmaglie/FlashStorage
+#include <FlashAsEEPROM_SAMD.h>                //https://github.com/khoih-prog/FlashStorage_SAMD
 #include <WiFiManager_Generic_Lite_Debug.h>
 
 #ifndef USING_CUSTOMS_STYLE
@@ -154,14 +152,8 @@ typedef struct
 
 #define NUM_WIFI_CREDENTIALS      2
 
-#if USING_BOARD_NAME
-  // Configurable items besides fixed Header, just add board_name 
-  #define NUM_CONFIGURABLE_ITEMS    ( ( 2 * NUM_WIFI_CREDENTIALS ) + 1 )
-#else
-  // Configurable items besides fixed Header, just add board_name 
-  #define NUM_CONFIGURABLE_ITEMS    ( ( 2 * NUM_WIFI_CREDENTIALS ))
-#endif
-
+// Configurable items besides fixed Header
+#define NUM_CONFIGURABLE_ITEMS    ( ( 2 * NUM_WIFI_CREDENTIALS ) + 1 )
 ////////////////
 
 #define HEADER_MAX_LEN            16
@@ -187,20 +179,12 @@ const char WIFI_GENERIC_HTML_HEAD_START[] /*PROGMEM*/ = "<!DOCTYPE html><html><h
 
 const char WIFI_GENERIC_HTML_HEAD_STYLE[] /*PROGMEM*/ = "<style>div,input{padding:5px;font-size:1em;}input{width:95%;}body{text-align: center;}button{background-color:#16A1E7;color:#fff;line-height:2.4rem;font-size:1.2rem;width:100%;}fieldset{border-radius:0.3rem;margin:0px;}</style>";
 
-#if USING_BOARD_NAME
 const char WIFI_GENERIC_HTML_HEAD_END[]   /*PROGMEM*/ = "</head><div style='text-align:left;display:inline-block;min-width:260px;'>\
 <fieldset><div><label>*WiFi SSID</label><div>[[input_id]]</div></div>\
 <div><label>*PWD (8+ chars)</label><input value='[[pw]]' id='pw'><div></div></div>\
 <div><label>*WiFi SSID1</label><div>[[input_id1]]</div></div>\
 <div><label>*PWD1 (8+ chars)</label><input value='[[pw1]]' id='pw1'><div></div></div></fieldset>\
 <fieldset><div><label>Board Name</label><input value='[[nm]]' id='nm'><div></div></div></fieldset>";	// DO NOT CHANGE THIS STRING EVER!!!!
-#else
-const char WIFI_GENERIC_HTML_HEAD_END[]   /*PROGMEM*/ = "</head><div style='text-align:left;display:inline-block;min-width:260px;'>\
-<fieldset><div><label>*WiFi SSID</label><div>[[input_id]]</div></div>\
-<div><label>*PWD (8+ chars)</label><input value='[[pw]]' id='pw'><div></div></div>\
-<div><label>*WiFi SSID1</label><div>[[input_id1]]</div></div>\
-<div><label>*PWD1 (8+ chars)</label><input value='[[pw1]]' id='pw1'><div></div></div></fieldset>";	// DO NOT CHANGE THIS STRING EVER!!!!
-#endif
 
 const char WIFI_GENERIC_HTML_INPUT_ID[]   /*PROGMEM*/ = "<input value='[[id]]' id='id'>";
 const char WIFI_GENERIC_HTML_INPUT_ID1[]  /*PROGMEM*/ = "<input value='[[id1]]' id='id1'>";
@@ -209,21 +193,12 @@ const char WIFI_GENERIC_FLDSET_START[]  /*PROGMEM*/ = "<fieldset>";
 const char WIFI_GENERIC_FLDSET_END[]    /*PROGMEM*/ = "</fieldset>";
 const char WIFI_GENERIC_HTML_PARAM[]    /*PROGMEM*/ = "<div><label>{b}</label><input value='[[{v}]]'id='{i}'><div></div></div>";
 const char WIFI_GENERIC_HTML_BUTTON[]   /*PROGMEM*/ = "<button onclick=\"sv()\">Save</button></div>";
-
-#if USING_BOARD_NAME
 const char WIFI_GENERIC_HTML_SCRIPT[]   /*PROGMEM*/ = "<script id=\"jsbin-javascript\">\
 function udVal(key,val){var request=new XMLHttpRequest();var url='/?key='+key+'&value='+encodeURIComponent(val);\
 request.open('GET',url,false);request.send(null);}\
 function sv(){udVal('id',document.getElementById('id').value);udVal('pw',document.getElementById('pw').value);\
 udVal('id1',document.getElementById('id1').value);udVal('pw1',document.getElementById('pw1').value);\
 udVal('nm',document.getElementById('nm').value);";
-#else
-const char WIFI_GENERIC_HTML_SCRIPT[]   /*PROGMEM*/ = "<script id=\"jsbin-javascript\">\
-function udVal(key,val){var request=new XMLHttpRequest();var url='/?key='+key+'&value='+encodeURIComponent(val);\
-request.open('GET',url,false);request.send(null);}\
-function sv(){udVal('id',document.getElementById('id').value);udVal('pw',document.getElementById('pw').value);\
-udVal('id1',document.getElementById('id1').value);udVal('pw1',document.getElementById('pw1').value);";
-#endif
 
 const char WIFI_GENERIC_HTML_SCRIPT_ITEM[]  /*PROGMEM*/ = "udVal('{d}',document.getElementById('{d}').value);";
 const char WIFI_GENERIC_HTML_SCRIPT_END[]   /*PROGMEM*/ = "alert('Updated');}</script>";
@@ -267,7 +242,7 @@ const char WM_HTTP_CORS_ALLOW_ALL[]  PROGMEM = "*";
 
 //////////////////////////////////////////////
 
-String IPAddressToString(const IPAddress& _address)
+String IPAddressToString(IPAddress _address)
 {
   String str = String(_address[0]);
   str += ".";
@@ -344,12 +319,6 @@ class WiFiManager_Generic_Lite
     void begin(const char *iHostname = "")
     {
       #define RETRY_TIMES_CONNECT_WIFI			3
- 
-#if USING_CONFIG_MODE_LED  
-      //Turn OFF
-      pinMode(LED_BUILTIN, OUTPUT);
-      digitalWrite(LED_BUILTIN, LED_OFF);
-#endif
       
       if (iHostname[0] == 0)
       {
@@ -397,10 +366,6 @@ class WiFiManager_Generic_Lite
       if (hadConfigData && noConfigPortal && (!isForcedConfigPortal) )
       {
         hadConfigData = true;
-
-#if (USE_WIFI_NINA || USE_WIFI101)        
-        wifiMulti_addAP();
-#endif
 
         if (connectMultiWiFi(RETRY_TIMES_CONNECT_WIFI))
         {
@@ -471,16 +436,6 @@ class WiFiManager_Generic_Lite
   #endif
 #endif
 
-#if !defined(WIFI_RECON_INTERVAL)      
-  #define WIFI_RECON_INTERVAL       0         // default 0s between reconnecting WiFi
-#else
-  #if (WIFI_RECON_INTERVAL < 0)
-    #define WIFI_RECON_INTERVAL     0
-  #elif  (WIFI_RECON_INTERVAL > 600000)
-    #define WIFI_RECON_INTERVAL     600000    // Max 10min
-  #endif
-#endif
-
     void run()
     {
       static int retryTimes = 0;
@@ -492,10 +447,6 @@ class WiFiManager_Generic_Lite
       static unsigned long checkstatus_timeout = 0;
       #define WIFI_STATUS_CHECK_INTERVAL    5000L
       
-      static uint32_t curMillis;
-      
-      curMillis = millis();
-      
       //// New DRD ////
       // Call the double reset detector loop method every so often,
       // so that it can recognise when the timeout expires.
@@ -504,16 +455,11 @@ class WiFiManager_Generic_Lite
       drd->loop();
       //// New DRD ////
          
-      if ( !configuration_mode && (curMillis > checkstatus_timeout) )
+      if ( !configuration_mode && (millis() > checkstatus_timeout) )
       {       
         if (WiFi.status() == WL_CONNECTED)
         {
           wifi_connected = true;
-          
-#if USING_CONFIG_MODE_LED
-          // turn the LED_BUILTIN OFF to tell us we exit configuration mode.
-          digitalWrite(CONFIG_MODE_LED, LED_OFF);
-#endif
         }
         else
         {
@@ -529,7 +475,7 @@ class WiFiManager_Generic_Lite
           }
         }
         
-        checkstatus_timeout = curMillis + WIFI_STATUS_CHECK_INTERVAL;
+        checkstatus_timeout = millis() + WIFI_STATUS_CHECK_INTERVAL;
       }    
 
       // Lost connection in running. Give chance to reconfig.
@@ -570,31 +516,12 @@ class WiFiManager_Generic_Lite
           // Not in config mode, try reconnecting before forcing to config mode
           if ( !wifi_connected )
           {
-            
- 
-#if (WIFI_RECON_INTERVAL > 0)
-
-            static uint32_t lastMillis = 0;
-            
-            if ( (lastMillis == 0) || (curMillis - lastMillis) > WIFI_RECON_INTERVAL )
-            {
-              lastMillis = curMillis;
-              
-              WG_LOGERROR(F("r:WLost.ReconW"));
-               
-              if (connectMultiWiFi(RETRY_TIMES_RECONNECT_WIFI))
-              {
-                WG_LOGERROR(F("r:WOK"));
-              }
-            }
-#else
             WG_LOGERROR(F("r:WLost.ReconW"));
             
             if (connectMultiWiFi(RETRY_TIMES_RECONNECT_WIFI))
             {
               WG_LOGERROR(F("r:WOK"));
             }
-#endif            
           }
         }
       }
@@ -602,11 +529,6 @@ class WiFiManager_Generic_Lite
       {
         configuration_mode = false;
         WG_LOGERROR(F("r:gotWBack"));
-        
-#if USING_CONFIG_MODE_LED
-        // turn the LED_BUILTIN OFF to tell us we exit configuration mode.
-        digitalWrite(CONFIG_MODE_LED, LED_OFF);
-#endif
       }
     }
     
@@ -626,7 +548,7 @@ class WiFiManager_Generic_Lite
     
     //////////////////////////////////////////////
 
-    void setConfigPortalIP(const IPAddress& portalIP = IPAddress(192, 168, 4, 1))
+    void setConfigPortalIP(IPAddress portalIP = IPAddress(192, 168, 4, 1))
     {
       portal_apIP = portalIP;
     }
@@ -636,7 +558,7 @@ class WiFiManager_Generic_Lite
     #define MIN_WIFI_CHANNEL      1
     #define MAX_WIFI_CHANNEL      11    // Channel 13 is flaky, because of bad number 13 ;-)
 
-    int setConfigPortalChannel(const int& channel = 1)
+    int setConfigPortalChannel(int channel = 1)
     {
       // If channel < MIN_WIFI_CHANNEL - 1 or channel > MAX_WIFI_CHANNEL => channel = 1
       // If channel == 0 => will use random channel from MIN_WIFI_CHANNEL to MAX_WIFI_CHANNEL
@@ -651,7 +573,7 @@ class WiFiManager_Generic_Lite
     
     //////////////////////////////////////////////
     
-    void setConfigPortal(const String& ssid = "", const String& pass = "")
+    void setConfigPortal(String ssid = "", String pass = "")
     {
       portal_ssid = ssid;
       portal_pass = pass;
@@ -659,14 +581,14 @@ class WiFiManager_Generic_Lite
     
     //////////////////////////////////////////////
 
-    void setSTAStaticIPConfig(const IPAddress& ip)
+    void setSTAStaticIPConfig(IPAddress ip)
     {
       static_IP = ip;
     }
     
     //////////////////////////////////////////////
     
-    String getWiFiSSID(const uint8_t& index)
+    String getWiFiSSID(uint8_t index)
     { 
       if (index >= NUM_WIFI_CREDENTIALS)
         return String("");
@@ -679,7 +601,7 @@ class WiFiManager_Generic_Lite
     
     //////////////////////////////////////////////
 
-    String getWiFiPW(const uint8_t& index)
+    String getWiFiPW(uint8_t index)
     {
       if (index >= NUM_WIFI_CREDENTIALS)
         return String("");
@@ -742,13 +664,6 @@ class WiFiManager_Generic_Lite
     bool isConfigDataValid()
     {
       return hadConfigData;
-    }
-    
-    //////////////////////////////////////////////
-    
-    bool isConfigMode()
-    {
-      return configuration_mode;
     }
     
     //////////////////////////////////////////////
@@ -961,7 +876,7 @@ class WiFiManager_Generic_Lite
       return RFC952_hostname;
     }
     
-    void displayConfigData(const WIFI_GENERIC_Configuration& configData)
+    void displayConfigData(WIFI_GENERIC_Configuration configData)
     {
       WG_LOGERROR5(F("Hdr="),   configData.header, F(",SSID="), configData.WiFi_Creds[0].wifi_ssid,
                    F(",PW="),   configData.WiFi_Creds[0].wifi_pw);
@@ -981,22 +896,6 @@ class WiFiManager_Generic_Lite
       WG_LOGERROR3(F("SSID="), WiFi.SSID(), F(",RSSI="), WiFi.RSSI());
       WG_LOGERROR1(F("IP="), localIP() );
     }
-    
-    //////////////////////////////////////////////
-
-#if (USE_WIFI_NINA || USE_WIFI101)
-
-    void wifiMulti_addAP()    
-    {
-      for (uint8_t index = 0; index < NUM_WIFI_CREDENTIALS; index++)
-      {
-        wifiMulti.addAP(WIFI_GENERIC_config.WiFi_Creds[index].wifi_ssid, WIFI_GENERIC_config.WiFi_Creds[index].wifi_pw);
-  	  }
-  	}  
-#endif
-    
-    //////////////////////////////////////////////
-
 
 #define WIFI_GENERIC_BOARD_TYPE   "WIFI_GENERIC"
 #define WM_NO_CONFIG              "blank"
@@ -1031,7 +930,7 @@ class WiFiManager_Generic_Lite
     
     //////////////////////////////////////////////
     
-    void setForcedCP(const bool& isPersistent)
+    void setForcedCP(bool isPersistent)
     {
       uint32_t readForcedConfigPortalFlag = isPersistent? FORCED_PERS_CONFIG_PORTAL_FLAG_DATA : FORCED_CONFIG_PORTAL_FLAG_DATA;
     
@@ -1310,10 +1209,6 @@ class WiFiManager_Generic_Lite
 #if USE_DYNAMIC_PARAMETERS        
       EEPROM_putDynamicData();
 #endif
-
-#if (USE_WIFI_NINA || USE_WIFI101)        
-        wifiMulti_addAP();
-#endif
     }
     
     //////////////////////////////////////////////
@@ -1469,74 +1364,6 @@ class WiFiManager_Generic_Lite
 
     //////////////////////////////////////////////
     
-#if (USE_WIFI_NINA || USE_WIFI101)  
-    
-    bool connectMultiWiFi(int retry_time)
-    {
-			// For general board, this better be 1000 to enable connect the 1st time
-			#define WIFI_MULTI_1ST_CONNECT_WAITING_MS             1000L
-
-			#define WIFI_MULTI_CONNECT_WAITING_MS                   500L
-
-			WG_LOGDEBUG("No WiFi. Trying to scan and reconnect");
-
-			WiFi.disconnect();
-
-			int i = 0;
-
-			uint8_t status = wifiMulti.run();
-
-			delay(WIFI_MULTI_1ST_CONNECT_WAITING_MS);
-
-			while ( ( i++ < (retry_time * 5) ) && ( status != WL_CONNECTED ) )
-			{
-				status = WiFi.status();
-
-				if ( status == WL_CONNECTED )
-				  break;
-				else
-				  delay(WIFI_MULTI_CONNECT_WAITING_MS);
-			}
-
-			if ( status == WL_CONNECTED )
-			{
-				WG_LOGERROR1(F("WiFi connected after time: "), i);
-				WG_LOGERROR3(F("SSID:"), WiFi.SSID(), F(",RSSI="), WiFi.RSSI());
-
-		#if (defined(ESP32) || defined(ESP8266))
-				WG_LOGERROR3(F("Channel:"), WiFi.channel(), F(",IP address:"), WiFi.localIP() );
-		#else
-				WG_LOGERROR1(F("IP address:"), WiFi.localIP() );
-		#endif
-			}
-			else
-			{
-				WG_LOGERROR(F("WiFi not connected"));
-
-				if (wifiMulti.run() != WL_CONNECTED)
-				{
-				  Serial.println("WiFi not connected!");
-				  delay(1000);
-				}
-			}
-
-			return (status == WL_CONNECTED);
-    }
-
-#else
-    
-    //////////////////////////////////////////////
-
-// Max times to try WiFi per loop() iteration. To avoid blocking issue in loop()
-// Default 1 and minimum 1.
-#if !defined(MAX_NUM_WIFI_RECON_TRIES_PER_LOOP)      
-  #define MAX_NUM_WIFI_RECON_TRIES_PER_LOOP     1
-#else
-  #if (MAX_NUM_WIFI_RECON_TRIES_PER_LOOP < 1)  
-    #define MAX_NUM_WIFI_RECON_TRIES_PER_LOOP     1
-  #endif
-#endif
-
     // New connection logic from v1.2.0
     bool connectMultiWiFi(int retry_time)
     {
@@ -1596,9 +1423,7 @@ class WiFiManager_Generic_Lite
       
       uint8_t numIndexTried = 0;
       
-      uint8_t numWiFiReconTries = 0;
-     
-      while ( !wifi_connected && (numIndexTried++ < NUM_WIFI_CREDENTIALS) && (numWiFiReconTries++ < MAX_NUM_WIFI_RECON_TRIES_PER_LOOP) )
+      while ( !wifi_connected && (numIndexTried++ < NUM_WIFI_CREDENTIALS) )
       {         
         while ( 0 < retry_time )
         {      
@@ -1663,9 +1488,7 @@ class WiFiManager_Generic_Lite
 
       return wifi_connected;  
     }
-
-#endif
-   
+    
     //////////////////////////////////////////////
     
     // NEW
@@ -1826,10 +1649,7 @@ class WiFiManager_Generic_Lite
             result.replace("[[pw]]",     WIFI_GENERIC_config.WiFi_Creds[0].wifi_pw);
             result.replace("[[id1]]",    WIFI_GENERIC_config.WiFi_Creds[1].wifi_ssid);
             result.replace("[[pw1]]",    WIFI_GENERIC_config.WiFi_Creds[1].wifi_pw);
-            
-#if USING_BOARD_NAME            
             result.replace("[[nm]]",     WIFI_GENERIC_config.board_name);
-#endif            
           }
           else
           {
@@ -1837,10 +1657,7 @@ class WiFiManager_Generic_Lite
             result.replace("[[pw]]",  "");
             result.replace("[[id1]]", "");
             result.replace("[[pw1]]", "");
-            
-#if USING_BOARD_NAME            
             result.replace("[[nm]]",  "");
-#endif            
           }
           
 #if USE_DYNAMIC_PARAMETERS          
@@ -1893,10 +1710,7 @@ class WiFiManager_Generic_Lite
         static bool pw_Updated  = false;
         static bool id1_Updated = false;
         static bool pw1_Updated = false;
-       
-#if USING_BOARD_NAME         
         static bool nm_Updated  = false;
-#endif
           
         if (!id_Updated && (key == String("id")))
         {   
@@ -1942,7 +1756,6 @@ class WiFiManager_Generic_Lite
           else
             strncpy(WIFI_GENERIC_config.WiFi_Creds[1].wifi_pw, value.c_str(), sizeof(WIFI_GENERIC_config.WiFi_Creds[1].wifi_pw) - 1);
         }
-#if USING_BOARD_NAME        
         else if (!nm_Updated && (key == String("nm")))
         {
           WG_LOGDEBUG(F("h:repl nm"));
@@ -1953,8 +1766,7 @@ class WiFiManager_Generic_Lite
             strcpy(WIFI_GENERIC_config.board_name, value.c_str());
           else
             strncpy(WIFI_GENERIC_config.board_name, value.c_str(), sizeof(WIFI_GENERIC_config.board_name) - 1);
-        }    
-#endif
+        }
         else
         {
         
@@ -2025,11 +1837,6 @@ class WiFiManager_Generic_Lite
 	    configTimeout = 0;  // To allow user input in CP
 	    
 	    WiFiNetworksFound = scanWifiNetworks(&indices);	
-#endif
-    
-#if USING_CONFIG_MODE_LED
-      // turn the LED_BUILTIN ON to tell us we enter configuration mode.
-      digitalWrite(CONFIG_MODE_LED, LED_ON);
 #endif
     
       WiFi.config(portal_apIP);
@@ -2117,7 +1924,7 @@ class WiFiManager_Generic_Lite
 
     //////////////////////////////////////////
 	
-	  void setMinimumSignalQuality(const int& quality)
+	  void setMinimumSignalQuality(int quality)
 	  {
 	    _minimumQuality = quality;
 	  }
@@ -2125,7 +1932,7 @@ class WiFiManager_Generic_Lite
 	  //////////////////////////////////////////
 
 	  //if this is true, remove duplicate Access Points - default true
-	  void setRemoveDuplicateAPs(const bool& removeDuplicates)
+	  void setRemoveDuplicateAPs(bool removeDuplicates)
 	  {
 	    _removeDuplicateAPs = removeDuplicates;
 	  }
@@ -2245,7 +2052,7 @@ class WiFiManager_Generic_Lite
 
 	  //////////////////////////////////////////
 
-	  int getRSSIasQuality(const int& RSSI)
+	  int getRSSIasQuality(int RSSI)
 	  {
 	    int quality = 0;
 

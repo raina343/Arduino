@@ -24,8 +24,6 @@
 
 #include "BLECharacteristic.h"
 
-extern "C" int strcasecmp(char const *a, char const *b);
-
 BLECharacteristic::BLECharacteristic() :
   BLECharacteristic((BLELocalCharacteristic*)NULL)
 {
